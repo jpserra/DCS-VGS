@@ -24,7 +24,6 @@ public class Simulation implements Runnable {
 	private final static int nrNodes = 50;
 	
 	// Simulation components
-	// TODO Working?
 	Cluster clusters[];
 	
 	GridSchedulerPanel gridSchedulerPanel;
