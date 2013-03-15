@@ -5,7 +5,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
-import distributed.systems.core.Socket;
+
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import distributed.systems.core.SynchronizedSocket;
 import distributed.systems.core.LocalSocket;
 
@@ -26,7 +29,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private final String url;
 
 	// communications socket
-	private Socket socket;
+	private SynchronizedSocket socket;
 	
 	// a hashmap linking each resource manager to an estimated load
 	private ConcurrentHashMap<String, Integer> resourceManagerLoad;
@@ -46,8 +49,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * <DD>parameter <CODE>url</CODE> cannot be null
 	 * </DL>
 	 * @param url the gridscheduler's url to register at
+	 * @throws IOException 
 	 */
-	public GridScheduler(String url) {
+	public GridScheduler(String url) throws IOException {
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
 		
@@ -57,7 +61,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		
 		// create a messaging socket
-		LocalSocket lSocket = new LocalSocket();
+		ServerSocket lSocket = new ServerSocket();
 		socket = new SynchronizedSocket(lSocket);
 		socket.addMessageReceivedHandler(this);
 		

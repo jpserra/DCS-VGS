@@ -1,5 +1,6 @@
 package distributed.systems.gridscheduler.model;
 
+import java.net.Socket;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -60,7 +61,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// nodes we can assume a node will become available soon to handle that job.
 		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
 
-		LocalSocket lSocket = new LocalSocket();
+		Socket lSocket = new Socket();
 		socket = new SynchronizedSocket(lSocket);
 		socket.register(socketURL);
 

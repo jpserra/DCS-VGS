@@ -1,29 +1,40 @@
 package distributed.systems.core;
 
-import distributed.systems.gridscheduler.*;
-
 import distributed.systems.gridscheduler.model.ControlMessage;
-import distributed.systems.gridscheduler.model.ResourceManager;
 
-public class SynchronizedSocket extends Socket{
+import java.net.ServerSocket;
 
-	public SynchronizedSocket(LocalSocket lSocket) {
-		// TODO Auto-generated constructor stub
+public class SynchronizedSocket extends ServerSocket implements Runnable {
+	private ServerSocket socket;
+	private IMessageReceivedHandler handler;
+
+	public SynchronizedSocket(ServerSocket lSocket) {
+		socket = lSocket;
 	}
 
 	public void sendMessage(ControlMessage controlMessage, String string) {
 		// TODO Auto-generated method stub
+		//socket
 		
 	}
 
-	public void addMessageReceivedHandler(ResourceManager resourceManager) {
-		// TODO Auto-generated method stub
-		
+	public void addMessageReceivedHandler(IMessageReceivedHandler handler) {
+		assert(handler == null);
+		this.handler = handler;
+		this.run();
 	}
 
 	public void register(String socketURL) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public void run() {
+		while(true) {
+			socket.
+			
+		}
 	}
 
 }
