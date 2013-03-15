@@ -57,7 +57,7 @@ public class Simulation implements Runnable {
 		System.out.println("Criar Clusters");
 		clusters = new Cluster[nrClusters];
 		for (int i = 0; i < nrClusters; i++) {
-			clusters[i] = new Cluster(clusterURL + i, clusterBasePort,scheduler.getUrl(),scheduler.getPort()+i+1, nrNodes); 
+			clusters[i] = new Cluster(clusterURL, clusterBasePort+i, scheduler.getUrl(),scheduler.getPort(), nrNodes); 
 			System.out.println("+"+i);
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);

@@ -12,6 +12,8 @@ import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
+import distributed.systems.gridscheduler.model.ControlMessage;
+
 /**
  * Este tipo de dados implementa o canal de comunicação, lado do cliente, para
  * uma comunicação baseada em passagem de mensagens sobre sockets usando o
@@ -229,6 +231,24 @@ public class ClientCom extends Thread {
             System.exit(1);
         }
     }
+    
+    static public void sendMessage(ControlMessage controlMessage, String url, int port) {
+		
+		ClientCom con = new ClientCom(url, port);
+        Message outMessage;
+
+        while (!con.open()) {
+            try {
+                sleep((long) (10));
+            } catch (InterruptedException e) {
+            }
+        }
+
+        outMessage = controlMessage;
+        con.writeObject(outMessage);
+        con.close();
+        
+	}
 
     public Message performCommunication(Message outMessage) {
 

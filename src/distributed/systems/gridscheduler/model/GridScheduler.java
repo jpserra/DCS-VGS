@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
+import distributed.systems.core.ServerCom;
 import distributed.systems.core.ServerInfo;
 import distributed.systems.core.SynchronizedSocket;
 
@@ -39,6 +40,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	// polling frequency, 1hz
 	private long pollSleep = 1000;
 	
+	private ServerCom scon;
+	
 	// polling thread
 	private Thread pollingThread;
 	private boolean running;
@@ -67,19 +70,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		
 		// create a messaging socket
-		ServerSocket lSocket = new ServerSocket();
-		lSocket.bind(new InetSocketAddress(url,port));
-		//lSocket.bind(new InetSocketAddress(url,port));
-		socket = new SynchronizedSocket(lSocket);
-		// register the socket under the name of the gridscheduler.
-				// In this way, messages can be sent between components by name.
-				//socket.register(url,port);
-		System.out.println("Antes ADD");
-		socket.addMessageReceivedHandler(this);
-		System.out.println("DepoisADD");
-		
-		
-		
+		scon = new ServerCom(port);
+        scon.startUp();
+		scon.addMessageReceivedHandler(this);
 
 		// start the polling thread
 		running = true;

@@ -45,7 +45,7 @@ public class Cluster implements Runnable {
 		
 		// Initialize members
 		this.url = name;
-		this.port = gridSchedulerPort;
+		this.port = port;
 
 		nodes = new ArrayList<Node>(nodeCount);
 		

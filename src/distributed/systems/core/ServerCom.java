@@ -16,7 +16,7 @@ import java.net.SocketException;
  * protocolo TCP. A transferência de dados é baseada em objectos, um objecto de
  * cada vez.
  */
-public class ServerCom {
+public class ServerCom extends Thread{
 
     /**
      * Socket de escuta
@@ -57,6 +57,8 @@ public class ServerCom {
     public ServerCom(int portNumb) {
         serverPortNumb = portNumb;
     }
+    
+    private IMessageReceivedHandler handler;
 
     /**
      * Instanciação de um canal de comunicação (forma 2).
@@ -73,7 +75,7 @@ public class ServerCom {
      * Estabelecimento do serviço. Instanciação de um socket de escuta e sua
      * associação ao endereço da máquina local e ao port de escuta públicos.
      */
-    public void start() {
+    public void startUp() {
         try {
             listeningSocket = new ServerSocket(serverPortNumb);
         } catch (BindException e) // erro fatal --- port já em uso
@@ -242,4 +244,27 @@ public class ServerCom {
             System.exit(1);
         }
     }
+    
+	public void addMessageReceivedHandler(IMessageReceivedHandler handler) {
+		assert(handler != null);
+		this.handler = handler;
+		this.start();
+	}
+    
+    @Override
+	public void run() {
+    	ServerCom sconi;
+		while(true) {
+			sconi = this.accept();
+			Message inMessage = null, outMessage = null;
+	        inMessage = (Message) sconi.readObject();
+	        sconi.close();
+	        try {
+	        	handler.onMessageReceived(inMessage);
+	        } catch (Exception e) {
+	        	e.printStackTrace();
+	            System.exit(1);
+	        }
+		}
+	}
 }

@@ -5,8 +5,10 @@ import java.net.ServerSocket;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import distributed.systems.core.ClientCom;
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
+import distributed.systems.core.ServerCom;
 import distributed.systems.core.SynchronizedSocket;
 
 /**
@@ -36,6 +38,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	// Scheduler url
 	private String gridSchedulerURL = null;
 	private int gridSchedulerPort;
+	
+	private ServerCom scon;
 
 	private SynchronizedSocket socket;
 
@@ -65,26 +69,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// nodes we can assume a node will become available soon to handle that job.
 		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
 
-		ServerSocket lSocket = null;
-		System.out.println("criar socket");
-		try {
-			lSocket = new ServerSocket();
-			System.out.println("bind");
-			//lSocket.bind(new InetSocketAddress(socketURL,socketPort));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		System.out.println("criar sync socket");
-		try {
-			socket = new SynchronizedSocket(lSocket);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		socket.register(socketURL,socketPort);
-		System.out.println("Lançar thread hadler");
-		socket.addMessageReceivedHandler(this);
+		// create a messaging socket
+				scon = new ServerCom(socketPort);
+		        scon.startUp();
+				scon.addMessageReceivedHandler(this);
 	}
 
 	/**
@@ -185,7 +173,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
 		message.setUrl(socketURL);
 		message.setPort(socketPort);
-		socket.sendMessage(message, gridSchedulerURL, gridSchedulerPort);
+		ClientCom.sendMessage(message, gridSchedulerURL, gridSchedulerPort);
 
 	}
 
@@ -216,9 +204,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad);
 			replyMessage.setUrl(cluster.getName());
 			replyMessage.setLoad(jobQueue.size());
-			socket.sendMessage(replyMessage, controlMessage.getUrl(), controlMessage.getPort());				
+			ClientCom.sendMessage(replyMessage, controlMessage.getUrl(), controlMessage.getPort());				
 		}
 
 	}
+	
+	
 
 }

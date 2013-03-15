@@ -61,9 +61,7 @@ public class SynchronizedSocket extends Thread implements Runnable {
 			try {
 				Socket s = socket.accept();
 				in = new ObjectInputStream(s.getInputStream());
-				handler.onMessageReceived((Message)in.readObject());
-				//
-				
+				handler.onMessageReceived((Message)in.readObject());				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
