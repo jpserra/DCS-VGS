@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedSocket;
-import distributed.systems.example.LocalSocket;
+import distributed.systems.core.LocalSocket;
 
 /**
  * This class represents a resource manager in the VGS. It is a component of a cluster, 

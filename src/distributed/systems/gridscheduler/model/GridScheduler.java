@@ -7,7 +7,7 @@ import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.Socket;
 import distributed.systems.core.SynchronizedSocket;
-import distributed.systems.example.LocalSocket;
+import distributed.systems.core.LocalSocket;
 
 /**
  * 
