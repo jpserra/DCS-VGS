@@ -1,5 +1,7 @@
 package distributed.systems.gridscheduler;
 
+import java.io.IOException;
+
 import javax.swing.JFrame;
 
 import distributed.systems.gridscheduler.gui.ClusterStatusPanel;
@@ -31,8 +33,9 @@ public class Simulation implements Runnable {
 	/**
 	 * Constructs a new simulation object. Study this code to see how to set up your own
 	 * simulation.
+	 * @throws IOException 
 	 */
-	public Simulation() {
+	public Simulation() throws IOException {
 		GridScheduler scheduler;
 		
 		// Setup the model. Create a grid scheduler and a set of clusters.
