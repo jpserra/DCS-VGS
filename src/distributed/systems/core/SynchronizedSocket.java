@@ -1,15 +1,16 @@
 package distributed.systems.core;
 
-import distributed.systems.gridscheduler.model.ControlMessage;
-
 import java.io.IOException;
+
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
-public class SynchronizedSocket extends ServerSocket implements Runnable {
+import distributed.systems.gridscheduler.model.ControlMessage;
+
+public class SynchronizedSocket extends Thread implements Runnable {
 	private ServerSocket socket;
 	private IMessageReceivedHandler handler;
 	private ObjectInputStream in;
@@ -20,30 +21,38 @@ public class SynchronizedSocket extends ServerSocket implements Runnable {
 		socket = lSocket;
 	}
 
-	public void sendMessage(ControlMessage controlMessage, String url) {
-		//socket
-		Socket s;
-		try {
-			s = new Socket(url, 8080);
-			out = new ObjectOutputStream(s.getOutputStream());
-			out.writeObject(controlMessage);
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void sendMessage(ControlMessage controlMessage, String url, int port) {
 		
+		ClientCom con = new ClientCom(url, port);
+        Message outMessage;
+
+        while (!con.open()) {
+            try {
+                sleep((long) (10));
+            } catch (InterruptedException e) {
+            }
+        }
+
+        outMessage = controlMessage;
+        con.writeObject(outMessage);
+        con.close();
+        
 	}
 
 	public void addMessageReceivedHandler(IMessageReceivedHandler handler) {
 		assert(handler != null);
 		this.handler = handler;
-		this.run();
+		this.start();
 	}
 
-	public void register(String socketURL) {
+	public void register(String socketURL, int port) {
 		// TODO Auto-generated method stub
-		
+		try {
+			socket.bind(new InetSocketAddress(socketURL,port));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override

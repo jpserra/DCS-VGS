@@ -36,20 +36,29 @@ public class Simulation implements Runnable {
 	 * @throws IOException 
 	 */
 	public Simulation() throws IOException {
+		
 		GridScheduler scheduler;
 		
+		String gsURL = "localhost";
+		int gsPort = 20000;
+		
+		String clusterURL = "localhost";
+		int clusterBasePort = 21000;
+		
 		// Setup the model. Create a grid scheduler and a set of clusters.
-		scheduler = new GridScheduler("scheduler1");
+		System.out.println("Criar Scheduler");
+		scheduler = new GridScheduler(gsURL,gsPort);
 
 		// Create a new gridscheduler panel so we can monitor our components
 		gridSchedulerPanel = new GridSchedulerPanel(scheduler);
 		gridSchedulerPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// Create the clusters and nods
+		System.out.println("Criar Clusters");
 		clusters = new Cluster[nrClusters];
 		for (int i = 0; i < nrClusters; i++) {
-			clusters[i] = new Cluster("cluster" + i, scheduler.getUrl(), nrNodes); 
-			
+			clusters[i] = new Cluster(clusterURL + i, clusterBasePort,scheduler.getUrl(),scheduler.getPort()+i+1, nrNodes); 
+			System.out.println("+"+i);
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);
 			gridSchedulerPanel.addStatusPanel(clusterReporter);
@@ -60,6 +69,7 @@ public class Simulation implements Runnable {
 		
 		// Run the simulation
 		Thread runThread = new Thread(this);
+		System.out.println("Iniciar Thread");
 		runThread.run(); // This method only returns after the simulation has ended
 		
 		// Now perform the cleanup
@@ -101,7 +111,12 @@ public class Simulation implements Runnable {
 	 */
 	public static void main(String[] args) {
 		// Create and run the simulation
-		new Simulation();
+		try {
+			new Simulation();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

@@ -20,6 +20,7 @@ public class ControlMessage extends Message {
 
 	private final ControlMessageType type;
 	private String url;
+	private int port;
 	private Job job;
 	private int load;
 
@@ -76,6 +77,20 @@ public class ControlMessage extends Message {
 	 */
 	public void setUrl(String url) {
 		this.url = url;
+	}
+	
+	/**
+	 * @return the port
+	 */
+	public int getPort() {
+		return port;
+	}
+
+	/**
+	 * @param port the port to set
+	 */
+	public void setPort(int port) {
+		this.port = port;
 	}
 
 	/**

@@ -15,6 +15,7 @@ public class Cluster implements Runnable {
 	private List <Node> nodes;
 	private ResourceManager resourceManager;
 	private String url;
+	private int port;
 	
 	// polling frequency, 10hz
 	private long pollSleep = 100;
@@ -35,20 +36,24 @@ public class Cluster implements Runnable {
 	 * @param name the name of this cluster
 	 * @param nrNodes the number of nodes in this cluster
 	 */
-	public Cluster(String name, String gridSchedulerURL, int nodeCount) {
+	public Cluster(String name, int port, String gridSchedulerURL, int gridSchedulerPort, int nodeCount) {
 		// Preconditions
 		assert(name != null) : "parameter 'name' cannot be null";
 		assert(gridSchedulerURL != null) : "parameter 'gridSchedulerURL' cannot be null";
+		assert((Integer)gridSchedulerPort != null) : "parameter 'gridSchedulerPort' cannot be null";
 		assert(nodeCount > 0) : "parameter 'nodeCount' cannot be smaller or equal to zero";
 		
 		// Initialize members
 		this.url = name;
+		this.port = gridSchedulerPort;
 
 		nodes = new ArrayList<Node>(nodeCount);
 		
 		// Initialize the resource manager for this cluster
+		System.out.println("Antes de criar RM");
 		resourceManager = new ResourceManager(this);
-		resourceManager.connectToGridScheduler(gridSchedulerURL);
+		System.out.println("Antes de conectar");
+		resourceManager.connectToGridScheduler(gridSchedulerURL,gridSchedulerPort);
 
 		// Initialize the nodes 
 		for (int i = 0; i < nodeCount; i++) {
@@ -88,6 +93,14 @@ public class Cluster implements Runnable {
 	 */
 	public String getName() {
 		return url;
+	}
+	
+	/**
+	 * Returns the port of the cluster
+	 * @return the port of the cluster
+	 */
+	public int getPort() {
+		return port;
 	}
 
 	/**

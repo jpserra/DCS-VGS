@@ -1,13 +1,13 @@
 package distributed.systems.gridscheduler.model;
 
-import java.net.Socket;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedSocket;
-import distributed.systems.core.LocalSocket;
 
 /**
  * This class represents a resource manager in the VGS. It is a component of a cluster, 
@@ -29,13 +29,16 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
 	private String socketURL;
+	private int socketPort;
 	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 32; 
 
 	// Scheduler url
 	private String gridSchedulerURL = null;
+	private int gridSchedulerPort;
 
 	private SynchronizedSocket socket;
+
 
 	/**
 	 * Constructs a new ResourceManager object.
@@ -54,6 +57,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		this.cluster = cluster;
 		this.socketURL = cluster.getName();
+		this.socketPort = cluster.getPort();
 
 		// Number of jobs in the queue must be larger than the number of nodes, because
 		// jobs are kept in queue until finished. The queue is a bit larger than the 
@@ -61,10 +65,25 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// nodes we can assume a node will become available soon to handle that job.
 		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
 
-		Socket lSocket = new Socket();
-		socket = new SynchronizedSocket(lSocket);
-		socket.register(socketURL);
-
+		ServerSocket lSocket = null;
+		System.out.println("criar socket");
+		try {
+			lSocket = new ServerSocket();
+			System.out.println("bind");
+			//lSocket.bind(new InetSocketAddress(socketURL,socketPort));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("criar sync socket");
+		try {
+			socket = new SynchronizedSocket(lSocket);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		socket.register(socketURL,socketPort);
+		System.out.println("Lançar thread hadler");
 		socket.addMessageReceivedHandler(this);
 	}
 
@@ -90,7 +109,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob);
 			controlMessage.setJob(job);
-			socket.sendMessage(controlMessage, "localsocket://" + gridSchedulerURL);
+			socket.sendMessage(controlMessage, gridSchedulerURL, gridSchedulerPort);
 
 			// otherwise store it in the local queue
 		} else {
@@ -155,16 +174,18 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * pre: the parameter 'gridSchedulerURL' must not be null
 	 * @param gridSchedulerURL
 	 */
-	public void connectToGridScheduler(String gridSchedulerURL) {
+	public void connectToGridScheduler(String gridSchedulerURL, int gridSchedulerPort) {
 
 		// preconditions
 		assert(gridSchedulerURL != null) : "the parameter 'gridSchedulerURL' cannot be null"; 
 
 		this.gridSchedulerURL = gridSchedulerURL;
+		this.gridSchedulerPort = gridSchedulerPort;
 
 		ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
 		message.setUrl(socketURL);
-		socket.sendMessage(message, "localsocket://" + gridSchedulerURL);
+		message.setPort(socketPort);
+		socket.sendMessage(message, gridSchedulerURL, gridSchedulerPort);
 
 	}
 
@@ -195,7 +216,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad);
 			replyMessage.setUrl(cluster.getName());
 			replyMessage.setLoad(jobQueue.size());
-			socket.sendMessage(replyMessage, "localsocket://" + controlMessage.getUrl());				
+			socket.sendMessage(replyMessage, controlMessage.getUrl(), controlMessage.getPort());				
 		}
 
 	}
