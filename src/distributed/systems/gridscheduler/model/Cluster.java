@@ -8,7 +8,7 @@ import java.util.List;
  * The Cluster class represents a single cluster in the virtual grid system. It consists of a 
  * collection of nodes and a resource manager. 
  * 
- * @author Niels Brouwers
+ * @author Niels
  *
  */
 public class Cluster implements Runnable {
