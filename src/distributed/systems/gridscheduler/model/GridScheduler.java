@@ -1,18 +1,17 @@
 package distributed.systems.gridscheduler.model;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.net.InetAddress;
+import java.awt.TrayIcon.MessageType;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
 import distributed.systems.core.SynchronizedSocket;
 //import distributed.systems.example.LocalSocket;
 
@@ -33,7 +32,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private final String url;
 	// local port
 	private final int port;
-
+	
+	private Set<InetSocketAddress> gridSchedulersList;
+	
 	// communications socket
 	private SynchronizedSocket syncSocket;
 	
@@ -59,35 +60,55 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	public GridScheduler(String url, int port) {
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
-		
+		assert(port > 0) : "parameter 'port'";
+
 		// init members
 		this.url = url;
 		this.port = port;
-
+		
+		gridSchedulersList = new HashSet<InetSocketAddress>();
+		gridSchedulersList.add(new InetSocketAddress(url, port));
+		
 		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
-		
-		// create a messaging socket
-		//LocalSocket lSocket = new LocalSocket();
-		
-		/*
-
-		socket = new SynchronizedSocket(lSocket);
-		socket.addMessageReceivedHandler(this);
-		*/
-		
+				
 		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
 
-		
-		// register the socket under the name of the gridscheduler.
-		// In this way, messages can be sent between components by name.
-		//socket.register(url);
-
-		// start the polling thread
 		running = true;
 		pollingThread = new Thread(this);
 		pollingThread.start();
+	}
+	
+	public GridScheduler(String url, int port, String otherGSUrl, int otherGSPort) {
+		// preconditions
+		assert(url != null) : "parameter 'url' cannot be null";
+		assert(port > 0) : "parameter 'port'";
+		assert(otherGSUrl != null) : "parameter 'url' cannot be null";
+		assert(otherGSPort > 0) : "parameter 'port'";
+
+		// init members
+		this.url = url;
+		this.port = port;
+		
+		gridSchedulersList = new HashSet<InetSocketAddress>();
+		gridSchedulersList.add(new InetSocketAddress(url, port));
+		
+		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
+		this.jobQueue = new ConcurrentLinkedQueue<Job>();
+				
+		syncSocket = new SynchronizedSocket(url, port);
+		syncSocket.addMessageReceivedHandler(this);
+		
+		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList);
+		cMessage.setUrl(url);
+		cMessage.setPort(port);	
+		syncSocket.sendMessage(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort));
+		
+		running = true;
+		pollingThread = new Thread(this);
+		pollingThread.start();
+		
 	}
 	
 	/**
@@ -135,8 +156,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// resource manager wants to join this grid scheduler 
 		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure
 		// no jobs are scheduled to it until we know the actual load
-		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin)
+		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
 			resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
+		}
 		
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.AddJob)
@@ -146,6 +168,29 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.ReplyLoad)
 			resourceManagerLoad.put(controlMessage.getInetAddress(),controlMessage.getLoad());
 			
+		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
+			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
+			msg.setGridSchedulersList(gridSchedulersList);
+			syncSocket.sendMessage(msg, controlMessage.getInetAddress());
+		}
+		
+		if (controlMessage.getType() == ControlMessageType.GSRequestsGSList) {
+			gridSchedulersList.add(controlMessage.getInetAddress());
+			for(InetSocketAddress address : gridSchedulersList) {
+				ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
+				msg.setGridSchedulersList(gridSchedulersList);
+				syncSocket.sendMessage(msg, address);
+			}
+		}
+
+		
+		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
+		{
+			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
+				gridSchedulersList.add(address);
+			}
+			System.out.println(gridSchedulersList);
+		}
 		
 	}
 
@@ -230,5 +275,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 		
 	}
+	
 	
 }

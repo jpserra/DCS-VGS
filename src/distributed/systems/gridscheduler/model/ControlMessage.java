@@ -1,7 +1,7 @@
 package distributed.systems.gridscheduler.model;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Set;
 
 import distributed.systems.core.Message;
 
@@ -27,6 +27,7 @@ public class ControlMessage extends Message {
 
 	private Job job;
 	private int load;
+	private Set<InetSocketAddress> gridSchedulersList;
 
 	/**
 	 * Constructs a new ControlMessage object
@@ -109,5 +110,11 @@ public class ControlMessage extends Message {
 		return type;
 	}
 
+	public Set<InetSocketAddress> getGridSchedulersList() {
+		return gridSchedulersList;
+	}
 
+	public void setGridSchedulersList(Set<InetSocketAddress> gridSchedulersList) {
+		this.gridSchedulersList = gridSchedulersList;
+	}
 }

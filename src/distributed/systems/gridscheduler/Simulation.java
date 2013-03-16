@@ -34,9 +34,11 @@ public class Simulation implements Runnable {
 	 */
 	public Simulation() {
 		GridScheduler scheduler;
-		
+		GridScheduler scheduler2;
+
 		// Setup the model. Create a grid scheduler and a set of clusters.
 		scheduler = new GridScheduler("localhost", 25000);
+		scheduler2 = new GridScheduler("localhost", 25001, "localhost", 25000);
 
 		// Create a new gridscheduler panel so we can monitor our components
 		gridSchedulerPanel = new GridSchedulerPanel(scheduler);
@@ -46,7 +48,7 @@ public class Simulation implements Runnable {
 		System.out.println("Init Clusters");
 		clusters = new Cluster[nrClusters];
 		for (int i = 0; i < nrClusters; i++) {
-			clusters[i] = new Cluster("localhost",  25001 + i, scheduler.getUrl(), scheduler.getPort(), nrNodes); 
+			clusters[i] = new Cluster("localhost",  25050 + i, scheduler.getUrl(), scheduler.getPort(), nrNodes); 
 			
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);

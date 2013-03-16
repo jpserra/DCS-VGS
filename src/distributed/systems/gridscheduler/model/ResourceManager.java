@@ -1,13 +1,8 @@
 package distributed.systems.gridscheduler.model;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
@@ -45,6 +40,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private int gridSchedulerPort;
 
 	private SynchronizedSocket syncSocket;
+
+	private Set<InetSocketAddress> gridSchedulersList;
 
 	/**
 	 * Constructs a new ResourceManager object.
@@ -183,43 +180,17 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		
 		syncSocket = new SynchronizedSocket(socketURL, socketPort);
 		syncSocket.addMessageReceivedHandler(this);
-
 		
-		ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
+		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList);
 		message.setUrl(socketURL);
 		message.setPort(socketPort);
 		syncSocket.sendMessage(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort));				
 
-		
-/*
-		Socket s;
-		try {
-			s = new Socket(gridSchedulerURL, gridSchedulerPort);
-			ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
-			//out.writeObject("Teste message");
-			ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
-			message.setUrl(socketURL);
-			message.setPort(socketPort);
-
-			out.writeObject(message);
-			out.close();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
-		//Socket s = serverSocket.accept();
-		//InputStream in = s.getInputStream();
-		
-		
 		/*
 		ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
 		message.setUrl(socketURL);
-		//socket.sendMessage(message, "localsocket://" + gridSchedulerURL);
-		socket.sendMessage(message, gridSchedulerURL);
+		message.setPort(socketPort);
+		syncSocket.sendMessage(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort));				
 */
 	}
 
@@ -254,6 +225,21 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			replyMessage.setPort(socketPort);
 			replyMessage.setLoad(jobQueue.size());
 			syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());				
+		}
+		
+
+		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
+		{
+			gridSchedulersList = controlMessage.getGridSchedulersList();
+			
+			System.out.println("GSList:" + gridSchedulersList);
+			for(InetSocketAddress address : gridSchedulersList) {
+				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin);
+				msg.setUrl(socketURL);
+				msg.setPort(socketPort);
+				syncSocket.sendMessage(msg, address);				
+			}
+
 		}
 
 	}

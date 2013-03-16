@@ -12,11 +12,21 @@ public enum ControlMessageType {
 	// from RM to GS
 	ResourceManagerJoin,
 	ReplyLoad,
+	RMRequestsGSList,
 
 	// from GS to RM
 	RequestLoad,
 
+	
+
 	// both ways
-	AddJob
+	AddJob,
+	
+	// GS to GS
+	GSRequestsGSList,
+
+	// GS to GS or GS to RM
+	ReplyGSList
+
 
 }
