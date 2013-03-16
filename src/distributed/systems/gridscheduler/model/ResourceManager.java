@@ -101,6 +101,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			controlMessage.setJob(job);
 			controlMessage.setUrl(socketURL);
 			controlMessage.setPort(socketPort);
+			
+			//TODO Add job is always adding to the same gridScheduler
 			syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
 
 			// otherwise store it in the local queue
