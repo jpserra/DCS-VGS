@@ -1,17 +1,13 @@
 package distributed.systems.gridscheduler.model;
 
+import java.net.InetSocketAddress;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
-
-import java.awt.TrayIcon.MessageType;
-import java.net.InetSocketAddress;
 import distributed.systems.core.SynchronizedSocket;
 //import distributed.systems.example.LocalSocket;
 
@@ -151,7 +147,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 		
 		ControlMessage controlMessage = (ControlMessage)message;
-		System.out.println("GS: Message received:" + controlMessage.getType());
+		
+		if(controlMessage.getType() != ControlMessageType.ReplyLoad) {
+			System.out.println("[GS "+url+":"+port+"] Message received: " + controlMessage.getType()+"\n");
+		}
 
 		// resource manager wants to join this grid scheduler 
 		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure

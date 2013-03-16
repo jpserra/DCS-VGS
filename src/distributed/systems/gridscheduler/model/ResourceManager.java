@@ -27,12 +27,13 @@ import distributed.systems.core.SynchronizedSocket;
  *
  */
 public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler {
+	
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
 	private String socketURL;
 	private int socketPort;
 
-//	private int jobQueueSize;
+	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
 
 	// Scheduler url
@@ -41,7 +42,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private SynchronizedSocket syncSocket;
 
-	private Set<InetSocketAddress> gridSchedulersList;
+	private Set<InetSocketAddress> gsList;
 
 	/**
 	 * Constructs a new ResourceManager object.
@@ -93,6 +94,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// check preconditions
 		assert(job != null) : "the parameter 'job' cannot be null";
 		assert(gridSchedulerURL != null) : "No grid scheduler URL has been set for this resource manager";
+		
+		int index;
+		InetSocketAddress address;
 
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
@@ -103,7 +107,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			controlMessage.setPort(socketPort);
 			
 			//TODO Add job is always adding to the same gridScheduler
-			syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
+			//syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
+			
+			index = (int)(Math.random() * ((gsList.size()-1) + 1));
+			address = (InetSocketAddress)gsList.toArray()[index];
+			
+			syncSocket.sendMessage(controlMessage, address);
+			
+			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostString()+":"+address.getPort()+"]\n");
 
 			// otherwise store it in the local queue
 		} else {
@@ -210,7 +221,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		ControlMessage controlMessage = (ControlMessage)message;
 
-		System.out.println("RM: Message received:" + controlMessage.getType());
+		//TODO Tirar o IF se for para ver os prints todos...
+		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
+			System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
+		}
 
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.AddJob)
@@ -232,10 +246,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
-			gridSchedulersList = controlMessage.getGridSchedulersList();
+			gsList = controlMessage.getGridSchedulersList();
 			
-			System.out.println("GSList:" + gridSchedulersList);
-			for(InetSocketAddress address : gridSchedulersList) {
+			System.out.println("GSList:" + gsList);
+			for(InetSocketAddress address : gsList) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin);
 				msg.setUrl(socketURL);
 				msg.setPort(socketPort);

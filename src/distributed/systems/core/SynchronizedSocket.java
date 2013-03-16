@@ -32,7 +32,7 @@ public class SynchronizedSocket extends Socket implements Runnable{
 				//InputStream in = s.getInputStream();
 				ObjectInputStream in = new ObjectInputStream(s.getInputStream());
 				ControlMessage msg = (ControlMessage)in.readObject();
-				System.out.println(msg.getType());
+				//System.out.println(msg.getType());
 				handler.onMessageReceived(msg);
 				in.close();
 				s.close();

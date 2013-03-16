@@ -12,9 +12,12 @@ import java.util.List;
  *
  */
 public class Cluster implements Runnable {
+	
 	private List <Node> nodes;
 	private ResourceManager resourceManager;
 	private String url;
+	private int port;
+	private int id;
 	
 	// polling frequency, 10hz
 	private long pollSleep = 100;
@@ -22,7 +25,6 @@ public class Cluster implements Runnable {
 	// polling thread
 	private Thread pollingThread;
 	private boolean running;
-	private int port;
 	
 	/**
 	 * Creates a new Cluster, with a number of nodes and a resource manager
@@ -36,13 +38,14 @@ public class Cluster implements Runnable {
 	 * @param name the name of this cluster
 	 * @param nrNodes the number of nodes in this cluster
 	 */
-	public Cluster(String clusterUrl, int clusterPort, String gridSchedulerURL, int gridSchedulerPort, int nodeCount) {
+	public Cluster(int id, String clusterUrl, int clusterPort, String gridSchedulerURL, int gridSchedulerPort, int nodeCount) {
 		// Preconditions
 		assert(clusterUrl != null) : "parameter 'clusterUrl' cannot be null";
 		assert(gridSchedulerURL != null) : "parameter 'gridSchedulerURL' cannot be null";
 		assert(nodeCount > 0) : "parameter 'nodeCount' cannot be smaller or equal to zero";
 		
 		// Initialize members
+		this.id = id;
 		this.url = clusterUrl;
 		this.port = clusterPort;
 
@@ -153,6 +156,10 @@ public class Cluster implements Runnable {
 
 	public int getPort() {
 		return this.port;
+	}
+
+	public int getID() {
+		return id;
 	}
 	
 }
