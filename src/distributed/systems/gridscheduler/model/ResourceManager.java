@@ -1,13 +1,19 @@
 package distributed.systems.gridscheduler.model;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedSocket;
-import distributed.systems.core.LocalSocket;
+//import distributed.systems.example.LocalSocket;
 
 /**
  * This class represents a resource manager in the VGS. It is a component of a cluster, 
@@ -29,13 +35,16 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
 	private String socketURL;
-	private int jobQueueSize;
-	public static final int MAX_QUEUE_SIZE = 32; 
+	private int socketPort;
+
+//	private int jobQueueSize;
+	public static final int MAX_QUEUE_SIZE = 10; 
 
 	// Scheduler url
 	private String gridSchedulerURL = null;
+	private int gridSchedulerPort;
 
-	private SynchronizedSocket socket;
+	private SynchronizedSocket syncSocket;
 
 	/**
 	 * Constructs a new ResourceManager object.
@@ -54,18 +63,21 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		this.cluster = cluster;
 		this.socketURL = cluster.getName();
-
+		this.socketPort = cluster.getPort();
 		// Number of jobs in the queue must be larger than the number of nodes, because
 		// jobs are kept in queue until finished. The queue is a bit larger than the 
 		// number of nodes for efficiency reasons - when there are only a few more jobs than
 		// nodes we can assume a node will become available soon to handle that job.
-		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
+//		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
 
+		/*
+		//LocalSocket lSocket = new LocalSocket();
 		Socket lSocket = new Socket();
 		socket = new SynchronizedSocket(lSocket);
-		socket.register(socketURL);
+		//socket.register(socketURL);
 
 		socket.addMessageReceivedHandler(this);
+		*/
 	}
 
 	/**
@@ -86,11 +98,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(gridSchedulerURL != null) : "No grid scheduler URL has been set for this resource manager";
 
 		// if the jobqueue is full, offload the job to the grid scheduler
-		if (jobQueue.size() >= jobQueueSize) {
+		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 
 			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob);
 			controlMessage.setJob(job);
-			socket.sendMessage(controlMessage, "localsocket://" + gridSchedulerURL);
+			controlMessage.setUrl(socketURL);
+			controlMessage.setPort(socketPort);
+			syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
 
 			// otherwise store it in the local queue
 		} else {
@@ -148,6 +162,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public String getGridSchedulerURL() {
 		return gridSchedulerURL;
 	}
+	
+	public int getGridSchedulerPort() {
+		return gridSchedulerPort;
+	}
 
 	/**
 	 * Connect to a grid scheduler
@@ -155,17 +173,54 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * pre: the parameter 'gridSchedulerURL' must not be null
 	 * @param gridSchedulerURL
 	 */
-	public void connectToGridScheduler(String gridSchedulerURL) {
+	public void connectToGridScheduler(String gridSchedulerURL, int gridSchedulerPort) {
 
 		// preconditions
 		assert(gridSchedulerURL != null) : "the parameter 'gridSchedulerURL' cannot be null"; 
 
 		this.gridSchedulerURL = gridSchedulerURL;
+		this.gridSchedulerPort = gridSchedulerPort;
+		
+		syncSocket = new SynchronizedSocket(socketURL, socketPort);
+		syncSocket.addMessageReceivedHandler(this);
 
+		
 		ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
 		message.setUrl(socketURL);
-		socket.sendMessage(message, "localsocket://" + gridSchedulerURL);
+		message.setPort(socketPort);
+		syncSocket.sendMessage(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort));				
 
+		
+/*
+		Socket s;
+		try {
+			s = new Socket(gridSchedulerURL, gridSchedulerPort);
+			ObjectOutputStream out = new ObjectOutputStream(s.getOutputStream());
+			//out.writeObject("Teste message");
+			ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
+			message.setUrl(socketURL);
+			message.setPort(socketPort);
+
+			out.writeObject(message);
+			out.close();
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		*/
+		//Socket s = serverSocket.accept();
+		//InputStream in = s.getInputStream();
+		
+		
+		/*
+		ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
+		message.setUrl(socketURL);
+		//socket.sendMessage(message, "localsocket://" + gridSchedulerURL);
+		socket.sendMessage(message, gridSchedulerURL);
+*/
 	}
 
 	/**
@@ -182,6 +237,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		ControlMessage controlMessage = (ControlMessage)message;
 
+		System.out.println("RM: Message received:" + controlMessage.getType());
+
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
@@ -193,9 +250,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.RequestLoad)
 		{
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad);
-			replyMessage.setUrl(cluster.getName());
+			replyMessage.setUrl(socketURL);
+			replyMessage.setPort(socketPort);
 			replyMessage.setLoad(jobQueue.size());
-			socket.sendMessage(replyMessage, "localsocket://" + controlMessage.getUrl());				
+			syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());				
 		}
 
 	}

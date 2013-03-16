@@ -1,5 +1,8 @@
 package distributed.systems.gridscheduler.model;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 import distributed.systems.core.Message;
 
 /**
@@ -20,6 +23,8 @@ public class ControlMessage extends Message {
 
 	private final ControlMessageType type;
 	private String url;
+	private int port;
+
 	private Job job;
 	private int load;
 
@@ -74,9 +79,28 @@ public class ControlMessage extends Message {
 	/**
 	 * @param url the url to set
 	 */
+	public void setPort(int port) {
+		this.port = port;
+	}
+	
+	/**
+	 * @return the url
+	 */
+	public int getPort() {
+		return port;
+	}
+	
+	public InetSocketAddress getInetAddress(){
+		return new InetSocketAddress(url, port);
+	}
+
+	/**
+	 * @param url the url to set
+	 */
 	public void setUrl(String url) {
 		this.url = url;
 	}
+
 
 	/**
 	 * @return the type

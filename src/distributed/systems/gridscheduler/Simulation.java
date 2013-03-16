@@ -1,7 +1,5 @@
 package distributed.systems.gridscheduler;
 
-import java.io.IOException;
-
 import javax.swing.JFrame;
 
 import distributed.systems.gridscheduler.gui.ClusterStatusPanel;
@@ -33,22 +31,22 @@ public class Simulation implements Runnable {
 	/**
 	 * Constructs a new simulation object. Study this code to see how to set up your own
 	 * simulation.
-	 * @throws IOException 
 	 */
-	public Simulation() throws IOException {
+	public Simulation() {
 		GridScheduler scheduler;
 		
 		// Setup the model. Create a grid scheduler and a set of clusters.
-		scheduler = new GridScheduler("scheduler1");
+		scheduler = new GridScheduler("localhost", 25000);
 
 		// Create a new gridscheduler panel so we can monitor our components
 		gridSchedulerPanel = new GridSchedulerPanel(scheduler);
 		gridSchedulerPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// Create the clusters and nods
+		System.out.println("Init Clusters");
 		clusters = new Cluster[nrClusters];
 		for (int i = 0; i < nrClusters; i++) {
-			clusters[i] = new Cluster("cluster" + i, scheduler.getUrl(), nrNodes); 
+			clusters[i] = new Cluster("localhost",  25001 + i, scheduler.getUrl(), scheduler.getPort(), nrNodes); 
 			
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);
@@ -86,10 +84,15 @@ public class Simulation implements Runnable {
 			
 			try {
 				// Sleep a while before creating a new job
-				Thread.sleep(100L);
+				Thread.sleep(50L);
+				//Limit number of jobs
+				if (jobId == 1000) Thread.sleep(10000000L);
+
 			} catch (InterruptedException e) {
 				assert(false) : "Simulation runtread was interrupted";
 			}
+			
+;
 			
 		}
 

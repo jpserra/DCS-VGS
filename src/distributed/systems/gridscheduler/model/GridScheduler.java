@@ -7,10 +7,14 @@ import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import distributed.systems.core.SynchronizedSocket;
-import distributed.systems.core.LocalSocket;
+//import distributed.systems.example.LocalSocket;
 
 /**
  * 
@@ -27,15 +31,17 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	
 	// local url
 	private final String url;
+	// local port
+	private final int port;
 
 	// communications socket
-	private SynchronizedSocket socket;
+	private SynchronizedSocket syncSocket;
 	
 	// a hashmap linking each resource manager to an estimated load
-	private ConcurrentHashMap<String, Integer> resourceManagerLoad;
+	private ConcurrentHashMap<InetSocketAddress, Integer> resourceManagerLoad;
 
 	// polling frequency, 1hz
-	private long pollSleep = 1000;
+	private long pollSleep = 100;
 	
 	// polling thread
 	private Thread pollingThread;
@@ -49,25 +55,34 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * <DD>parameter <CODE>url</CODE> cannot be null
 	 * </DL>
 	 * @param url the gridscheduler's url to register at
-	 * @throws IOException 
 	 */
-	public GridScheduler(String url) throws IOException {
+	public GridScheduler(String url, int port) {
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
 		
 		// init members
 		this.url = url;
-		this.resourceManagerLoad = new ConcurrentHashMap<String, Integer>();
+		this.port = port;
+
+		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		
 		// create a messaging socket
-		ServerSocket lSocket = new ServerSocket();
+		//LocalSocket lSocket = new LocalSocket();
+		
+		/*
+
 		socket = new SynchronizedSocket(lSocket);
 		socket.addMessageReceivedHandler(this);
+		*/
+		
+		syncSocket = new SynchronizedSocket(url, port);
+		syncSocket.addMessageReceivedHandler(this);
+
 		
 		// register the socket under the name of the gridscheduler.
 		// In this way, messages can be sent between components by name.
-		socket.register(url);
+		//socket.register(url);
 
 		// start the polling thread
 		running = true;
@@ -82,6 +97,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 */
 	public String getUrl() {
 		return url;
+	}
+	
+	public int getPort() {
+		return port;
 	}
 
 	/**
@@ -109,13 +128,15 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";
 		
-		ControlMessage controlMessage = (ControlMessage)message;
 		
+		ControlMessage controlMessage = (ControlMessage)message;
+		System.out.println("GS: Message received:" + controlMessage.getType());
+
 		// resource manager wants to join this grid scheduler 
 		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure
 		// no jobs are scheduled to it until we know the actual load
 		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin)
-			resourceManagerLoad.put(controlMessage.getUrl(), Integer.MAX_VALUE);
+			resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
 		
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.AddJob)
@@ -123,18 +144,18 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.ReplyLoad)
-			resourceManagerLoad.put(controlMessage.getUrl(),controlMessage.getLoad());
+			resourceManagerLoad.put(controlMessage.getInetAddress(),controlMessage.getLoad());
 			
 		
 	}
 
 	// finds the least loaded resource manager and returns its url
-	private String getLeastLoadedRM() {
-		String ret = null; 
+	private InetSocketAddress getLeastLoadedRM() {
+		InetSocketAddress ret = null; 
 		int minLoad = Integer.MAX_VALUE;
 		
 		// loop over all resource managers, and pick the one with the lowest load
-		for (String key : resourceManagerLoad.keySet())
+		for (InetSocketAddress key : resourceManagerLoad.keySet())
 		{
 			if (resourceManagerLoad.get(key) <= minLoad)
 			{
@@ -153,23 +174,25 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	public void run() {
 		while (running) {
 			// send a message to each resource manager, requesting its load
-			for (String rmUrl : resourceManagerLoad.keySet())
+			for (InetSocketAddress inetAdd : resourceManagerLoad.keySet())
 			{
 				ControlMessage cMessage = new ControlMessage(ControlMessageType.RequestLoad);
 				cMessage.setUrl(this.getUrl());
-				socket.sendMessage(cMessage, "localsocket://" + rmUrl);
+				cMessage.setPort(this.getPort());
+
+				syncSocket.sendMessage(cMessage, inetAdd);
 			}
 			
 			// schedule waiting messages to the different clusters
 			for (Job job : jobQueue)
 			{
-				String leastLoadedRM =  getLeastLoadedRM();
+				InetSocketAddress leastLoadedRM =  getLeastLoadedRM();
 				
 				if (leastLoadedRM!=null) {
 				
 					ControlMessage cMessage = new ControlMessage(ControlMessageType.AddJob);
 					cMessage.setJob(job);
-					socket.sendMessage(cMessage, "localsocket://" + leastLoadedRM);
+					syncSocket.sendMessage(cMessage, leastLoadedRM);
 					
 					jobQueue.remove(job);
 					

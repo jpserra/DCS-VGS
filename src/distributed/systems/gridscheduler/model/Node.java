@@ -14,9 +14,6 @@ public class Node {
 	private NodeStatus status;
 	private Job runningJob = null;
 	private long startTime;
-	
-//TODO tirar isto daqui
-	private long TIRAR;
 
 	private ArrayList<INodeEventHandler> handlers;
 

@@ -1,12 +1,14 @@
 package distributed.systems.gridscheduler.model;
 
+import java.io.Serializable;
+
 /**
  * This class represents a job that can be executed on a grid. 
  * 
  * @author Niels Brouwers
  *
  */
-public class Job {
+public class Job implements Serializable{
 	private long duration;
 	private JobStatus status;
 	private long id;

@@ -8,7 +8,7 @@ import java.util.List;
  * The Cluster class represents a single cluster in the virtual grid system. It consists of a 
  * collection of nodes and a resource manager. 
  * 
- * @author Niels
+ * @author Niels Brouwers
  *
  */
 public class Cluster implements Runnable {
@@ -22,6 +22,7 @@ public class Cluster implements Runnable {
 	// polling thread
 	private Thread pollingThread;
 	private boolean running;
+	private int port;
 	
 	/**
 	 * Creates a new Cluster, with a number of nodes and a resource manager
@@ -35,20 +36,21 @@ public class Cluster implements Runnable {
 	 * @param name the name of this cluster
 	 * @param nrNodes the number of nodes in this cluster
 	 */
-	public Cluster(String name, String gridSchedulerURL, int nodeCount) {
+	public Cluster(String clusterUrl, int clusterPort, String gridSchedulerURL, int gridSchedulerPort, int nodeCount) {
 		// Preconditions
-		assert(name != null) : "parameter 'name' cannot be null";
+		assert(clusterUrl != null) : "parameter 'clusterUrl' cannot be null";
 		assert(gridSchedulerURL != null) : "parameter 'gridSchedulerURL' cannot be null";
 		assert(nodeCount > 0) : "parameter 'nodeCount' cannot be smaller or equal to zero";
 		
 		// Initialize members
-		this.url = name;
+		this.url = clusterUrl;
+		this.port = clusterPort;
 
 		nodes = new ArrayList<Node>(nodeCount);
 		
 		// Initialize the resource manager for this cluster
 		resourceManager = new ResourceManager(this);
-		resourceManager.connectToGridScheduler(gridSchedulerURL);
+		resourceManager.connectToGridScheduler(gridSchedulerURL,gridSchedulerPort);
 
 		// Initialize the nodes 
 		for (int i = 0; i < nodeCount; i++) {
@@ -147,6 +149,10 @@ public class Cluster implements Runnable {
 			assert(false) : "Cluster stopPollThread was interrupted";
 		}
 		
+	}
+
+	public int getPort() {
+		return this.port;
 	}
 	
 }
