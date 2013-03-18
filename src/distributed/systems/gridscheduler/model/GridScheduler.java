@@ -98,6 +98,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
+		this.log = new ArrayList<LogEntry>();	
 				
 		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
@@ -152,12 +153,13 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";
 		
-		
 		ControlMessage controlMessage = (ControlMessage)message;
 		
-		//TODO ADD LOG ENTRYS, CANT FIGURE OUT WHATS THE PROBLEM
-//		this.logEntry = new LogEntry(controlMessage);
-//		log.add(this.logEntry);
+		//TODO Sincronização do log... Ver as mensagens que têm de ser logadas.
+		// Chamar um método que faça isto nos locais adequados.
+		this.logEntry = new LogEntry(controlMessage);
+		log.add(this.logEntry);
+		
 		if(controlMessage.getType() != ControlMessageType.ReplyLoad) {
 			System.out.println("[GS "+url+":"+port+"] Message received: " + controlMessage.getType()+"\n");
 		}
@@ -173,7 +175,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 			jobQueue.add(controlMessage.getJob());
 		
-			
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.ReplyLoad)
 			resourceManagerLoad.put(controlMessage.getInetAddress(),controlMessage.getLoad());
@@ -197,7 +198,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			}
 		}
 
-		
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
 			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
@@ -207,7 +207,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 	}
 	
-
 	// finds the least loaded resource manager and returns its url
 	private InetSocketAddress getLeastLoadedRM() {
 		InetSocketAddress ret = null; 
