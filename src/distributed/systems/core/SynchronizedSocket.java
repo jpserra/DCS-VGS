@@ -11,7 +11,6 @@ import distributed.systems.gridscheduler.model.ControlMessage;
 
 public class SynchronizedSocket extends Socket implements Runnable{
 
-//	private Socket socket;
 	private ServerSocket serverSocket;
 	private IMessageReceivedHandler handler;
 	
@@ -21,7 +20,6 @@ public class SynchronizedSocket extends Socket implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	@Override
@@ -29,10 +27,8 @@ public class SynchronizedSocket extends Socket implements Runnable{
 		while(true) {
 			try {
 				Socket s = serverSocket.accept();
-				//InputStream in = s.getInputStream();
 				ObjectInputStream in = new ObjectInputStream(s.getInputStream());
 				ControlMessage msg = (ControlMessage)in.readObject();
-				//System.out.println(msg.getType());
 				handler.onMessageReceived(msg);
 				in.close();
 				s.close();
@@ -58,7 +54,6 @@ public class SynchronizedSocket extends Socket implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 	}
-
+	
 }

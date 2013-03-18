@@ -14,8 +14,10 @@ public class SyncronizedClientSocket extends Thread {
 	
 	private Socket socket;
 	private ControlMessage cMessage;
+	private IMessageReceivedHandler handler;
 	
-	public SyncronizedClientSocket() {
+	public SyncronizedClientSocket(IMessageReceivedHandler handler) {
+		this.handler = handler;
 		this.socket = null;
 		this.cMessage = null;
 	}
@@ -34,10 +36,14 @@ public class SyncronizedClientSocket extends Thread {
 		}
 		
 		ObjectInputStream in;
+		ControlMessage msg = null;
+		
+		// Espera pela recepção da resposta até um determinado ponto.
 		try {
+			
 			socket.setSoTimeout(3000);
 			in = new ObjectInputStream(socket.getInputStream());
-			ControlMessage msg = (ControlMessage)in.readObject();
+			msg = (ControlMessage)in.readObject();
 			in.close();
 		} catch (SocketTimeoutException e) {
 			System.out.println("Timeout reached");
@@ -51,7 +57,8 @@ public class SyncronizedClientSocket extends Thread {
 			e.printStackTrace();
 		}
 		
-		//TODO Procesar a mensagem...
+		//TODO Procesar a mensagem... Problemas com concorrencia? Talvez fazer o metodo syncronized
+		handler.onMessageReceived(msg);
 
 	}
 	
