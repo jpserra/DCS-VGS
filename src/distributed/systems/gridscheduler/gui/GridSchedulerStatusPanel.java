@@ -26,10 +26,13 @@ public class GridSchedulerStatusPanel extends StatusPanel {
 	private int colWidth = panelWidth / 2;
 
 	private GridScheduler scheduler;
+	private GridScheduler scheduler1;
 	
-	public GridSchedulerStatusPanel(GridScheduler scheduler) {
+	public GridSchedulerStatusPanel(GridScheduler scheduler, GridScheduler scheduler1) {
 		this.scheduler = scheduler;
-		setPreferredSize(new Dimension(panelWidth,50));
+		this.scheduler1 = scheduler1;
+		
+		setPreferredSize(new Dimension(panelWidth,60));
 	}
 	
     protected void paintComponent(Graphics g) {
@@ -47,11 +50,18 @@ public class GridSchedulerStatusPanel extends StatusPanel {
 	    int y = padding + fontHeight;
 	    
 	    g.drawString("Scheduler name ", x, y);
-	    g.drawString("" + scheduler.getUrl(), x + colWidth, y);
+	    g.drawString("" + scheduler.getUrl() + ":"+ scheduler.getPort(), x + colWidth, y);
 	    y += fontHeight;
 	    
 	    g.drawString("Jobs waiting ", x, y);
 	    g.drawString("" + scheduler.getWaitingJobs(), x + colWidth, y);
+	    y += fontHeight;
+	    g.drawString("Scheduler name ", x, y);
+	    g.drawString("" + scheduler1.getUrl()+ ":"+ scheduler1.getPort(), x + colWidth, y);
+	    y += fontHeight;
+	    
+	    g.drawString("Jobs waiting ", x, y);
+	    g.drawString("" + scheduler1.getWaitingJobs(), x + colWidth, y);
 	    y += fontHeight;
     }	
 

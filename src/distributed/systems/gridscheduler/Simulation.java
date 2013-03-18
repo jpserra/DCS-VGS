@@ -41,7 +41,7 @@ public class Simulation implements Runnable {
 		gs2 = new GridScheduler("localhost", 25001, "localhost", 25000);
 
 		// Create a new gridscheduler panel so we can monitor our components
-		gridSchedulerPanel = new GridSchedulerPanel(gs1);
+		gridSchedulerPanel = new GridSchedulerPanel(gs1,gs2);
 		gridSchedulerPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		// Create the clusters and nods

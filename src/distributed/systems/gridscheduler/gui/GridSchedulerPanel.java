@@ -43,7 +43,7 @@ public class GridSchedulerPanel extends JFrame implements Runnable {
 	 * This is done so that the scheduler panel will always be on top.
 	 * @param scheduler The scheduler that is monitored by this Panel
 	 */
-	public GridSchedulerPanel(GridScheduler scheduler) {
+	public GridSchedulerPanel(GridScheduler scheduler, GridScheduler scheduler2) {
 		super("Status");
 		this.setSize(340, 680);
 		this.setResizable(false);
@@ -53,7 +53,7 @@ public class GridSchedulerPanel extends JFrame implements Runnable {
 		statusPanels = new ArrayList<StatusPanel>();
 
 		// Create the gridscheduler status panel and add it to the frame
-		GridSchedulerStatusPanel schedulerStatusPanel = new GridSchedulerStatusPanel(scheduler);
+		GridSchedulerStatusPanel schedulerStatusPanel = new GridSchedulerStatusPanel(scheduler, scheduler2);
 		statusPanels.add(schedulerStatusPanel);
 		this.add(schedulerStatusPanel);
 		// Place and resize the status panel
