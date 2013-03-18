@@ -103,8 +103,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob);
 			controlMessage.setJob(job);
-			controlMessage.setUrl(socketURL);
-			controlMessage.setPort(socketPort);
+			controlMessage.setUrl(this.socketURL);
+			controlMessage.setPort(this.socketPort);
 			
 			//TODO Add job is always adding to the same gridScheduler
 			//syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
@@ -251,7 +251,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			System.out.println("GSList:" + gsList);
 			for(InetSocketAddress address : gsList) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin);
-				msg.setUrl(socketURL);
+				msg.setUrl(this.socketURL);
 				msg.setPort(socketPort);
 				syncSocket.sendMessage(msg, address);				
 			}

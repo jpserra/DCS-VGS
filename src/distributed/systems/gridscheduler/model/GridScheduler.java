@@ -1,12 +1,13 @@
 package distributed.systems.gridscheduler.model;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 import distributed.systems.core.IMessageReceivedHandler;
+import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedSocket;
 //import distributed.systems.example.LocalSocket;
@@ -20,6 +21,10 @@ import distributed.systems.core.SynchronizedSocket;
  *
  */
 public class GridScheduler implements IMessageReceivedHandler, Runnable {
+	
+	//General Log containing every happening
+	private ArrayList<LogEntry> log;
+	private LogEntry logEntry;
 	
 	// job queue
 	private ConcurrentLinkedQueue<Job> jobQueue;
@@ -67,7 +72,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
-				
+		this.log = new ArrayList<LogEntry>();	
+		
 		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
 
@@ -99,6 +105,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList);
 		cMessage.setUrl(url);
 		cMessage.setPort(port);	
+		
 		syncSocket.sendMessage(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort));
 		
 		running = true;
@@ -148,6 +155,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 		ControlMessage controlMessage = (ControlMessage)message;
 		
+		//TODO ADD LOG ENTRYS, CANT FIGURE OUT WHATS THE PROBLEM
+//		this.logEntry = new LogEntry(controlMessage);
+//		log.add(this.logEntry);
 		if(controlMessage.getType() != ControlMessageType.ReplyLoad) {
 			System.out.println("[GS "+url+":"+port+"] Message received: " + controlMessage.getType()+"\n");
 		}
@@ -162,6 +172,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 			jobQueue.add(controlMessage.getJob());
+		
 			
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.ReplyLoad)
@@ -169,6 +180,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			
 		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
 			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
+			msg.setUrl(url);
+			msg.setPort(port);
 			msg.setGridSchedulersList(gridSchedulersList);
 			syncSocket.sendMessage(msg, controlMessage.getInetAddress());
 		}
@@ -177,6 +190,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			gridSchedulersList.add(controlMessage.getInetAddress());
 			for(InetSocketAddress address : gridSchedulersList) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
+				msg.setUrl(url);
+				msg.setPort(port);
 				msg.setGridSchedulersList(gridSchedulersList);
 				syncSocket.sendMessage(msg, address);
 			}
@@ -190,8 +205,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			}
 			System.out.println(gridSchedulersList);
 		}
-		
 	}
+	
 
 	// finds the least loaded resource manager and returns its url
 	private InetSocketAddress getLeastLoadedRM() {
@@ -236,6 +251,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				
 					ControlMessage cMessage = new ControlMessage(ControlMessageType.AddJob);
 					cMessage.setJob(job);
+					cMessage.setUrl(this.getUrl());
+					cMessage.setPort(this.getPort());
 					syncSocket.sendMessage(cMessage, leastLoadedRM);
 					
 					jobQueue.remove(job);

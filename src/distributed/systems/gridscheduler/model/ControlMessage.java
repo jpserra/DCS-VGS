@@ -28,6 +28,9 @@ public class ControlMessage extends Message {
 	private Job job;
 	private int load;
 	private Set<InetSocketAddress> gridSchedulersList;
+	
+	//TODO 
+	private int[] clock;
 
 	/**
 	 * Constructs a new ControlMessage object
