@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
+import distributed.systems.core.IServerMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
@@ -21,7 +22,7 @@ import distributed.systems.core.SynchronizedSocket;
  * @author Niels Brouwers
  *
  */
-public class GridScheduler implements IMessageReceivedHandler, Runnable {
+public class GridScheduler implements IMessageReceivedHandler,IServerMessageReceivedHandler, Runnable {
 	
 	//General Log containing every happening
 	private ArrayList<LogEntry> log;
@@ -160,49 +161,20 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 		ControlMessage controlMessage = (ControlMessage)message;
 		
-		//TODO Sincronização do log... Ver as mensagens que têm de ser logadas.
-		// Chamar um método que faça isto nos locais adequados.
-		this.logEntry = new LogEntry(controlMessage);
-		log.add(this.logEntry);
+		//TODO Sincronizacao do log... Ver as mensagens que tem de ser logadas.
+		// Chamar um metodo que faca isto nos locais adequados.
+		this.logMessage(controlMessage);
 		
 		if(controlMessage.getType() != ControlMessageType.ReplyLoad) {
 			System.out.println("[GS "+url+":"+port+"] Message received: " + controlMessage.getType()+"\n");
 		}
 
-		// resource manager wants to join this grid scheduler 
-		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure
-		// no jobs are scheduled to it until we know the actual load
-		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
-			resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
-		}
-		
-		// resource manager wants to offload a job to us 
-		if (controlMessage.getType() == ControlMessageType.AddJob)
-			jobQueue.add(controlMessage.getJob());
 		
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.ReplyLoad)
 			resourceManagerLoad.put(controlMessage.getInetAddress(),controlMessage.getLoad());
 			
-		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
-			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
-			msg.setUrl(url);
-			msg.setPort(port);
-			msg.setGridSchedulersList(gridSchedulersList);
-			syncSocket.sendMessage(msg, controlMessage.getInetAddress());
-		}
 		
-		if (controlMessage.getType() == ControlMessageType.GSRequestsGSList) {
-			gridSchedulersList.add(controlMessage.getInetAddress());
-			for(InetSocketAddress address : gridSchedulersList) {
-				ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
-				msg.setUrl(url);
-				msg.setPort(port);
-				msg.setGridSchedulersList(gridSchedulersList);
-				syncSocket.sendMessage(msg, address);
-			}
-		}
-
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
 			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
@@ -210,6 +182,65 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			}
 			System.out.println(gridSchedulersList);
 		}
+	}
+	
+	@Override
+	public synchronized ControlMessage onServerMessageReceived(Message message) {
+		// preconditions
+		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
+		assert(message != null) : "parameter 'message' cannot be null";
+
+		ControlMessage controlMessage = (ControlMessage)message;
+		this.logMessage(controlMessage);
+
+		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
+			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
+			msg.setUrl(url);
+			msg.setPort(port);
+			msg.setGridSchedulersList(gridSchedulersList);
+			//syncSocket.sendMessage(msg, controlMessage.getInetAddress());
+			return msg;
+		}		// TODO Auto-generated method stub
+		
+		if (controlMessage.getType() == ControlMessageType.GSRequestsGSList) {
+			Set<InetSocketAddress> gridSchedulersListTemp = gridSchedulersList;
+			//InetSocketAddress[] gridSchedulersListTemp = gridSchedulersList; 
+			gridSchedulersList.add(controlMessage.getInetAddress());
+			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
+
+			for(InetSocketAddress address : gridSchedulersListTemp) {
+				if (address.getPort() == this.getPort()) continue;
+				msg.setUrl(url);
+				msg.setPort(port);
+				msg.setGridSchedulersList(gridSchedulersList);
+				syncSocket.sendMessage(msg, address);
+			}			
+			msg = new ControlMessage(ControlMessageType.ReplyGSList);
+			msg.setUrl(url);
+			msg.setPort(port);
+			msg.setGridSchedulersList(gridSchedulersList);
+			return msg;
+		}
+		
+		// resource manager wants to offload a job to us 
+		if (controlMessage.getType() == ControlMessageType.AddJob) {
+			jobQueue.add(controlMessage.getJob());
+			//Syncing
+			ControlMessage msg = new ControlMessage(ControlMessageType.AddJobAck);
+			msg.setUrl(url);
+			msg.setPort(port);
+			return msg;
+		}
+		
+		// resource manager wants to join this grid scheduler 
+		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure
+		// no jobs are scheduled to it until we know the actual load
+		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
+					resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
+		}
+				
+		return null;
+		
 	}
 	
 	// finds the least loaded resource manager and returns its url
@@ -243,7 +274,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				cMessage.setUrl(this.getUrl());
 				cMessage.setPort(this.getPort());
 
-				syncSocket.sendMessage(cMessage, inetAdd);
+				//syncSocket.sendMessage(cMessage, inetAdd);
+				SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, inetAdd, this);
+				syncClientSocket.sendMessage();
+
 			}
 			
 			// schedule waiting messages to the different clusters
@@ -257,7 +291,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					cMessage.setJob(job);
 					cMessage.setUrl(this.getUrl());
 					cMessage.setPort(this.getPort());
-					syncSocket.sendMessage(cMessage, leastLoadedRM);
+					
+					SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this);
+					syncClientSocket.sendMessage();
+					//syncSocket.sendMessage(cMessage, leastLoadedRM);
 					
 					jobQueue.remove(job);
 					
@@ -295,6 +332,24 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 		
 	}
+
+	//Method called when a message arrives
+	private void logMessage(ControlMessage message) {
+			
+		//TODO Sincronizao do log... Ver as mensagens que tim de ser logadas.
+				// Chamar um metodo que fala isto nos locais adequados.
+			
+		if(message.getType() != ControlMessageType.ReplyLoad){
+			this.logEntry = new LogEntry(message);
+			log.add(this.logEntry);
+		}
+	}
 	
-	
+	 /*
+     * Returns the entire history of messages saves on the Grid Scheduler Log
+     */
+    public ArrayList<LogEntry> getFullLog(){
+            return log;
+    }
+		
 }

@@ -82,6 +82,8 @@ public class Simulation implements Runnable {
 		gs1.stopPollThread();
 		
 		gridSchedulerPanel.dispose();
+		
+		System.exit(1);
 	}
 
 	/**
@@ -125,6 +127,7 @@ public class Simulation implements Runnable {
 			;
 
 		}
+		
 
 	}
 

@@ -47,14 +47,15 @@ public class SynchronizedClientSocket extends Thread {
 			e.printStackTrace();
 		}
 
-		// Espera pela recepção da resposta até um determinado ponto.
+		// Espera pela recepo da resposta at um determinado ponto.
 		try {
 			socket.setSoTimeout(20000);
 			in = new ObjectInputStream(socket.getInputStream());
 			msg = (ControlMessage)in.readObject();
+			handler.onMessageReceived(msg);
 		} catch (SocketTimeoutException e) {
 			System.out.println("Timeout!!!!");
-			//TODO Fazer alguma coisa em relação à falha;
+			//TODO Fazer alguma coisa em relao  falha;
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

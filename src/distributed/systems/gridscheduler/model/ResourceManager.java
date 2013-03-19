@@ -6,7 +6,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
+import distributed.systems.core.IServerMessageReceivedHandler;
 import distributed.systems.core.Message;
+import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
 //import distributed.systems.example.LocalSocket;
 
@@ -26,7 +28,7 @@ import distributed.systems.core.SynchronizedSocket;
  * @author Niels Brouwers, Boaz Pat-El
  *
  */
-public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler {
+public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler, IServerMessageReceivedHandler {
 	
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
@@ -41,6 +43,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private int gridSchedulerPort;
 
 	private SynchronizedSocket syncSocket;
+	private SynchronizedClientSocket syncClientSocket;
 
 	private Set<InetSocketAddress> gsList;
 
@@ -112,7 +115,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			index = (int)(Math.random() * ((gsList.size()-1) + 1));
 			address = (InetSocketAddress)gsList.toArray()[index];
 			
-			syncSocket.sendMessage(controlMessage, address);
+			syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this);
+			syncClientSocket.sendMessage();
 			
 			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostString()+":"+address.getPort()+"]\n");
 
@@ -191,20 +195,19 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.gridSchedulerURL = gridSchedulerURL;
 		this.gridSchedulerPort = gridSchedulerPort;
 		
+
+		
 		syncSocket = new SynchronizedSocket(socketURL, socketPort);
 		syncSocket.addMessageReceivedHandler(this);
 		
 		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList);
 		message.setUrl(socketURL);
 		message.setPort(socketPort);
-		syncSocket.sendMessage(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort));				
+		//syncSocket.sendMessage(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort));				
 
-		/*
-		ControlMessage message = new ControlMessage(ControlMessageType.ResourceManagerJoin);
-		message.setUrl(socketURL);
-		message.setPort(socketPort);
-		syncSocket.sendMessage(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort));				
-*/
+		syncClientSocket = new SynchronizedClientSocket(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort), this);
+		syncClientSocket.sendMessage();
+
 	}
 
 	/**
@@ -225,23 +228,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
 			System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
 		}
-
-		// resource manager wants to offload a job to us 
-		if (controlMessage.getType() == ControlMessageType.AddJob)
-		{
-			jobQueue.add(controlMessage.getJob());
-			scheduleJobs();
-		}
-
-		// resource manager wants to offload a job to us 
-		if (controlMessage.getType() == ControlMessageType.RequestLoad)
-		{
-			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad);
-			replyMessage.setUrl(socketURL);
-			replyMessage.setPort(socketPort);
-			replyMessage.setLoad(jobQueue.size());
-			syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());				
-		}
 		
 
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
@@ -258,6 +244,43 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		}
 
+	}
+
+	@Override
+	public synchronized ControlMessage onServerMessageReceived(Message message) {
+		// preconditions
+		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
+		assert(message != null) : "parameter 'message' cannot be null";
+
+		ControlMessage controlMessage = (ControlMessage)message;
+
+		// resource manager wants to offload a job to us 
+		if (controlMessage.getType() == ControlMessageType.RequestLoad)
+		{
+			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad);
+			replyMessage.setUrl(socketURL);
+			replyMessage.setPort(socketPort);
+			replyMessage.setLoad(jobQueue.size());
+			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
+			return replyMessage;
+		}
+		
+		// resource manager wants to offload a job to us 
+		if (controlMessage.getType() == ControlMessageType.AddJob)
+		{
+			jobQueue.add(controlMessage.getJob());
+			
+			scheduleJobs();
+			
+			ControlMessage replyMessage = new ControlMessage(ControlMessageType.AddJobAck);
+			replyMessage.setUrl(socketURL);
+			replyMessage.setPort(socketPort);
+			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
+			return replyMessage;
+		}
+		
+		
+		return null;
 	}
 
 }

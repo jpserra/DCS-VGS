@@ -8,11 +8,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import distributed.systems.gridscheduler.model.ControlMessage;
+import distributed.systems.gridscheduler.model.ControlMessageType;
 
-public class SynchronizedSocket extends Socket implements Runnable{
+public class SynchronizedSocket extends Thread {
 
 	private ServerSocket serverSocket;
-	private IMessageReceivedHandler handler;
+	private IServerMessageReceivedHandler handler;
 	
 	public SynchronizedSocket(String localUrl, int localPort) {
 		try {
@@ -22,23 +23,60 @@ public class SynchronizedSocket extends Socket implements Runnable{
 		}
 	}
 
+	
+
+	public class ConnectionHandler extends Thread {
+		private Socket s;
+		private IServerMessageReceivedHandler handler;
+		public ConnectionHandler(Socket socket, IServerMessageReceivedHandler handler) {
+			s = socket;
+			this.handler =  handler;
+			
+		}
+		
+		public void run() {
+			ObjectOutputStream out;
+			ObjectInputStream in;
+			try {
+				out = new ObjectOutputStream(s.getOutputStream());
+				in = new ObjectInputStream(s.getInputStream());
+
+				ControlMessage msg = (ControlMessage)in.readObject();
+				ControlMessage replyMsg = handler.onServerMessageReceived(msg);
+				if(replyMsg != null) {
+					out.writeObject(replyMsg);
+					out.flush();
+
+				}
+				
+		
+				out.close();
+				in.close();
+				s.close();
+
+			} catch (IOException | ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		
+	}
+
 	@Override
 	public void run() {
 		while(true) {
 			try {
 				Socket s = serverSocket.accept();
-				ObjectInputStream in = new ObjectInputStream(s.getInputStream());
-				ControlMessage msg = (ControlMessage)in.readObject();
-				handler.onMessageReceived(msg);
-				in.close();
-				s.close();
-			} catch (IOException | ClassNotFoundException e) {
+				Thread t = new ConnectionHandler(s, handler);
+				t.start();
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}		
 	}
 
-	public void addMessageReceivedHandler(IMessageReceivedHandler handler) {
+	public void addMessageReceivedHandler(IServerMessageReceivedHandler handler) {
 		this.handler = handler;
 		Thread t = new Thread(this);
 		t.start();
@@ -50,6 +88,7 @@ public class SynchronizedSocket extends Socket implements Runnable{
 			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 			out.writeObject(cMessage);
 			out.close();
+			
 			socket.close();
 		} catch (IOException e) {
 			e.printStackTrace();
