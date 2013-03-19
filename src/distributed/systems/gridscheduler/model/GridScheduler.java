@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
+import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
 //import distributed.systems.example.LocalSocket;
 
@@ -38,6 +39,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	
 	// communications socket
 	private SynchronizedSocket syncSocket;
+	private SynchronizedClientSocket syncClientSocket;
 	
 	// a hashmap linking each resource manager to an estimated load
 	private ConcurrentHashMap<InetSocketAddress, Integer> resourceManagerLoad;
@@ -100,14 +102,17 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.log = new ArrayList<LogEntry>();	
 				
-		syncSocket = new SynchronizedSocket(url, port);
-		syncSocket.addMessageReceivedHandler(this);
-		
 		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList);
 		cMessage.setUrl(url);
-		cMessage.setPort(port);	
+		cMessage.setPort(port);
 		
-		syncSocket.sendMessage(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort));
+		syncSocket = new SynchronizedSocket(url, port);
+		syncSocket.addMessageReceivedHandler(this);
+//		syncSocket.sendMessage(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort));
+		
+		//Usar um socket diferente para fazer o envio das mensagens.
+		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort),this);
+		syncClientSocket.sendMessage();
 		
 		running = true;
 		pollingThread = new Thread(this);
@@ -148,7 +153,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * </DL> 
 	 * @param message a message
 	 */
-	public void onMessageReceived(Message message) {
+	public synchronized void onMessageReceived(Message message) {
 		// preconditions
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";

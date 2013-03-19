@@ -10,43 +10,50 @@ import java.net.SocketTimeoutException;
 import distributed.systems.gridscheduler.model.ControlMessage;
 
 
-public class SyncronizedClientSocket extends Thread {
+public class SynchronizedClientSocket extends Thread {
 	
 	private Socket socket;
 	private ControlMessage cMessage;
 	private IMessageReceivedHandler handler;
+	private InetSocketAddress address;
 	
-	public SyncronizedClientSocket(IMessageReceivedHandler handler) {
+	public SynchronizedClientSocket(ControlMessage cMessage, InetSocketAddress address, IMessageReceivedHandler handler) {
 		this.handler = handler;
-		this.socket = null;
-		this.cMessage = null;
+		socket = new Socket();
+		this.cMessage = cMessage;
+		this.address = address;
 	}
 
 	@Override
 	public void run() {
 		
+		ObjectInputStream in = null;
+		ControlMessage msg = null;
+		ObjectOutputStream out = null;
+		
+		try {
+			socket.connect(address);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		try {
 			//Send Message
-			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+			out = new ObjectOutputStream(socket.getOutputStream());
 			out.writeObject(cMessage);
-			out.close();
-			socket.close();
+			out.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
-		ObjectInputStream in;
-		ControlMessage msg = null;
-		
+
 		// Espera pela recepção da resposta até um determinado ponto.
 		try {
-			
-			socket.setSoTimeout(3000);
+			socket.setSoTimeout(20000);
 			in = new ObjectInputStream(socket.getInputStream());
 			msg = (ControlMessage)in.readObject();
-			in.close();
 		} catch (SocketTimeoutException e) {
-			System.out.println("Timeout reached");
+			System.out.println("Timeout!!!!");
 			//TODO Fazer alguma coisa em relação à falha;
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -57,19 +64,21 @@ public class SyncronizedClientSocket extends Thread {
 			e.printStackTrace();
 		}
 		
+		try {
+			in.close();
+			out.close();
+			socket.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
 		//TODO Procesar a mensagem... Problemas com concorrencia? Talvez fazer o metodo syncronized
 		handler.onMessageReceived(msg);
 
 	}
 	
-	public void sendMessage(ControlMessage cMessage, InetSocketAddress address) {
-		try {
-			socket = new Socket(address.getAddress(), address.getPort());
-			this.cMessage = cMessage;
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void sendMessage() {
 		Thread t = new Thread(this);
 		t.start();
 	}
