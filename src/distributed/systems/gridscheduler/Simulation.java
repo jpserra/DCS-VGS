@@ -1,12 +1,14 @@
 package distributed.systems.gridscheduler;
 
 import javax.swing.JFrame;
-
+import distributed.systems.core.LogEntry;
 import distributed.systems.gridscheduler.gui.ClusterStatusPanel;
 import distributed.systems.gridscheduler.gui.GridSchedulerPanel;
 import distributed.systems.gridscheduler.model.Cluster;
 import distributed.systems.gridscheduler.model.GridScheduler;
 import distributed.systems.gridscheduler.model.Job;
+import distributed.systems.gridscheduler.model.Node;
+import distributed.systems.gridscheduler.model.NodeStatus;
 
 /**
  *
@@ -22,18 +24,18 @@ public class Simulation implements Runnable {
 
 	// Number of nodes per cluster in the simulation
 	private final static int nrNodes = 50;
-	
+
 	// Simulation components
 	Cluster clusters[];
-	
+
 	GridSchedulerPanel gridSchedulerPanel;
-	
+
 	/**
 	 * Constructs a new simulation object. Study this code to see how to set up your own
 	 * simulation.
 	 */
 	public Simulation() {
-		
+
 		GridScheduler gs1, gs2;
 
 		// Setup the model. Create a grid scheduler and a set of clusters.
@@ -49,27 +51,37 @@ public class Simulation implements Runnable {
 		clusters = new Cluster[nrClusters];
 		for (int i = 0; i < nrClusters; i++) {
 			clusters[i] = new Cluster(i, "localhost", 25050 + i, gs1.getUrl(), gs1.getPort(), nrNodes); 
-			
+
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);
 			gridSchedulerPanel.addStatusPanel(clusterReporter);
 		}
-		
+
 		// Open the gridscheduler panel
 		gridSchedulerPanel.start();
-		
+
 		// Run the simulation
 		Thread runThread = new Thread(this);
 		runThread.run(); // This method only returns after the simulation has ended
-		
+
+
+		//Print log
+		System.out.println("Simulation Finished, printing Log...");
+
+
+		for(LogEntry e: gs1.getFullLog())
+			System.out.println(e.toString());
+
 		// Now perform the cleanup
-		
+
 		// Stop clusters
 		for (Cluster cluster : clusters)
 			cluster.stopPollThread();
-		
+
 		// Stop grid scheduler
 		gs1.stopPollThread();
+		
+		gridSchedulerPanel.dispose();
 	}
 
 	/**
@@ -83,19 +95,35 @@ public class Simulation implements Runnable {
 			// Add a new job to the system that take up random time
 			Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
 			clusters[0].getResourceManager().addJob(job);
-			
+
 			try {
 				// Sleep a while before creating a new job
 				Thread.sleep(50L);
 				//Limit number of jobs
-				if (jobId == 1000) Thread.sleep(10000000L);
+				if (jobId == 400) {
+					boolean finished = false;
+					while(!finished){
+						outerLoop:	for( int i= 0; i< nrClusters; i++){
+							for(Node n: clusters[i].getNodes()){
+								if (n.getStatus() == NodeStatus.Busy){
+									i = 0;
+									continue outerLoop;
+									
+								}
+									}
+							
+						}
+					finished = true;
+					}
+					return;
+				}
 
 			} catch (InterruptedException e) {
 				assert(false) : "Simulation runtread was interrupted";
 			}
-			
-;
-			
+
+			;
+
 		}
 
 	}

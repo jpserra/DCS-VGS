@@ -56,8 +56,26 @@ public class LogEntry {
 	}
 
 	
-	
-//TODO public String toString(){}
+	@Override
+ public String toString(){
+	 String s = "[";
+	 
+	 if(origin != null)
+		 s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
+	 
+		if(id != null)
+			s += "ID: " + id + " | ";
+		
+		if(event != null)
+			s += "Event: " + event + " | "; 
+		
+		if(clock != null)
+			s += "VecClock: " + clock ;
+		
+		s+= "]";
+		return s;
+	 
+ }
 
 }
 
