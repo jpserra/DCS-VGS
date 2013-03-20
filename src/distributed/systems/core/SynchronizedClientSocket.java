@@ -62,10 +62,10 @@ public class SynchronizedClientSocket extends Thread {
 
 			} catch (SocketTimeoutException e) {
 				System.out.println("Timeout!!!!");
-				//TODO Fazer alguma coisa em relao  falha;
+				handler.onExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				handler.onExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block

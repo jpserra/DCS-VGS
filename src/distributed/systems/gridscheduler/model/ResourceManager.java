@@ -115,7 +115,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			address = (InetSocketAddress)gsList.toArray()[index];
 			
 			syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this);
-			syncClientSocket.sendMessage();
+			syncClientSocket.sendMessageWithoutResponse();
 			
 			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostString()+":"+address.getPort()+"]\n");
 
@@ -270,6 +270,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		
 		return null;
 
+	}
+
+	@Override
+	public void onExceptionThrown(Message message,
+			InetSocketAddress destinationAddress) {
+		// TODO Auto-generated method stub
+		
 	}
 
 
