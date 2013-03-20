@@ -13,7 +13,7 @@ import distributed.systems.gridscheduler.model.ControlMessageType;
 public class SynchronizedSocket extends Thread {
 
 	private ServerSocket serverSocket;
-	private IServerMessageReceivedHandler handler;
+	private IMessageReceivedHandler handler;
 	
 	public SynchronizedSocket(String localUrl, int localPort) {
 		try {
@@ -27,8 +27,8 @@ public class SynchronizedSocket extends Thread {
 
 	public class ConnectionHandler extends Thread {
 		private Socket s;
-		private IServerMessageReceivedHandler handler;
-		public ConnectionHandler(Socket socket, IServerMessageReceivedHandler handler) {
+		private IMessageReceivedHandler handler;
+		public ConnectionHandler(Socket socket, IMessageReceivedHandler handler) {
 			s = socket;
 			this.handler =  handler;
 			
@@ -42,14 +42,13 @@ public class SynchronizedSocket extends Thread {
 				in = new ObjectInputStream(s.getInputStream());
 
 				ControlMessage msg = (ControlMessage)in.readObject();
-				ControlMessage replyMsg = handler.onServerMessageReceived(msg);
+				ControlMessage replyMsg = handler.onMessageReceived(msg);
 				if(replyMsg != null) {
 					out.writeObject(replyMsg);
 					out.flush();
 
 				}
 				
-		
 				out.close();
 				in.close();
 				s.close();
@@ -57,10 +56,8 @@ public class SynchronizedSocket extends Thread {
 			} catch (IOException | ClassNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
-			
+			}	
 		}
-		
 	}
 
 	@Override
@@ -76,12 +73,13 @@ public class SynchronizedSocket extends Thread {
 		}		
 	}
 
-	public void addMessageReceivedHandler(IServerMessageReceivedHandler handler) {
+	public void addMessageReceivedHandler(IMessageReceivedHandler handler) {
 		this.handler = handler;
 		Thread t = new Thread(this);
 		t.start();
 	}
-
+	
+	/*
 	public void sendMessage(ControlMessage cMessage, InetSocketAddress address) {
 		try {
 			Socket socket = new Socket(address.getAddress(), address.getPort());
@@ -93,6 +91,6 @@ public class SynchronizedSocket extends Thread {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	}*/
 	
 }

@@ -19,6 +19,8 @@ public enum ControlMessageType {
 	// from GS to RM
 	RequestLoad,
 	AddJobAck,
+	ResourceManagerJoinAck,
+
 	
 
 	// both ways

@@ -16,6 +16,8 @@ public class SynchronizedClientSocket extends Thread {
 	private ControlMessage cMessage;
 	private IMessageReceivedHandler handler;
 	private InetSocketAddress address;
+	private boolean requiresRepsonse;
+
 	
 	public SynchronizedClientSocket(ControlMessage cMessage, InetSocketAddress address, IMessageReceivedHandler handler) {
 		this.handler = handler;
@@ -38,6 +40,7 @@ public class SynchronizedClientSocket extends Thread {
 			e1.printStackTrace();
 		}
 		
+		
 		try {
 			//Send Message
 			out = new ObjectOutputStream(socket.getOutputStream());
@@ -47,26 +50,30 @@ public class SynchronizedClientSocket extends Thread {
 			e.printStackTrace();
 		}
 
-		// Espera pela recepo da resposta at um determinado ponto.
-		try {
-			socket.setSoTimeout(20000);
-			in = new ObjectInputStream(socket.getInputStream());
-			msg = (ControlMessage)in.readObject();
-			handler.onMessageReceived(msg);
-		} catch (SocketTimeoutException e) {
-			System.out.println("Timeout!!!!");
-			//TODO Fazer alguma coisa em relao  falha;
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (requiresRepsonse) {
+
+			// Espera pela recepo da resposta at um determinado ponto.
+			try {
+				socket.setSoTimeout(20000);
+				in = new ObjectInputStream(socket.getInputStream());
+				msg = (ControlMessage)in.readObject();
+				handler.onMessageReceived(msg);
+				in.close();
+
+			} catch (SocketTimeoutException e) {
+				System.out.println("Timeout!!!!");
+				//TODO Fazer alguma coisa em relao  falha;
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		try {
-			in.close();
 			out.close();
 			socket.close();
 		} catch (IOException e) {
@@ -75,14 +82,22 @@ public class SynchronizedClientSocket extends Thread {
 		}
 
 		//TODO Procesar a mensagem... Problemas com concorrencia? Talvez fazer o metodo syncronized
-		handler.onMessageReceived(msg);
+		//handler.onMessageReceived(msg);
 
 	}
 	
 	public void sendMessage() {
+		requiresRepsonse = true;
 		Thread t = new Thread(this);
 		t.start();
 	}
+	
+	public void sendMessageWithoutResponse() {
+		requiresRepsonse = false;
+		Thread t = new Thread(this);
+		t.start();
+	}
+
 
 
 }

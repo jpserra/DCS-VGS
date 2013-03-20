@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
-import distributed.systems.core.IServerMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
@@ -22,7 +21,7 @@ import distributed.systems.core.SynchronizedSocket;
  * @author Niels Brouwers
  *
  */
-public class GridScheduler implements IMessageReceivedHandler,IServerMessageReceivedHandler, Runnable {
+public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	
 	//General Log containing every happening
 	private ArrayList<LogEntry> log;
@@ -147,7 +146,7 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 	 * </DL> 
 	 * @param message a message
 	 */
-	public synchronized void onMessageReceived(Message message) {
+	public synchronized ControlMessage onMessageReceived(Message message) {
 		// preconditions
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";
@@ -175,17 +174,7 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 			}
 			System.out.println(gridSchedulersList);
 		}
-	}
-	
-	@Override
-	public synchronized ControlMessage onServerMessageReceived(Message message) {
-		// preconditions
-		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
-		assert(message != null) : "parameter 'message' cannot be null";
-
-		ControlMessage controlMessage = (ControlMessage)message;
-		this.logMessage(controlMessage);
-
+		
 		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
 			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
 			msg.setUrl(url);
@@ -199,19 +188,14 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 			Set<InetSocketAddress> gridSchedulersListTemp = gridSchedulersList;
 			//InetSocketAddress[] gridSchedulersListTemp = gridSchedulersList; 
 			gridSchedulersList.add(controlMessage.getInetAddress());
-			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
-
+			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList, url, port);
+			msg.setGridSchedulersList(gridSchedulersList);	
+			
 			for(InetSocketAddress address : gridSchedulersListTemp) {
 				if (address.getPort() == this.getPort()) continue;
-				msg.setUrl(url);
-				msg.setPort(port);
-				msg.setGridSchedulersList(gridSchedulersList);
-				syncSocket.sendMessage(msg, address);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+				syncClientSocket.sendMessageWithoutResponse();
 			}			
-			msg = new ControlMessage(ControlMessageType.ReplyGSList);
-			msg.setUrl(url);
-			msg.setPort(port);
-			msg.setGridSchedulersList(gridSchedulersList);
 			return msg;
 		}
 		
@@ -219,9 +203,7 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
 			jobQueue.add(controlMessage.getJob());
 			//Syncing
-			ControlMessage msg = new ControlMessage(ControlMessageType.AddJobAck);
-			msg.setUrl(url);
-			msg.setPort(port);
+			ControlMessage msg = new ControlMessage(ControlMessageType.AddJobAck, url, port);
 			return msg;
 		}
 		
@@ -230,12 +212,14 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 		// no jobs are scheduled to it until we know the actual load
 		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
 					resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
+			ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoinAck, url, port);
+			return msg;
+
 		}
 				
 		return null;
-		
 	}
-	
+		
 	// finds the least loaded resource manager and returns its url
 	private InetSocketAddress getLeastLoadedRM() {
 		InetSocketAddress ret = null; 

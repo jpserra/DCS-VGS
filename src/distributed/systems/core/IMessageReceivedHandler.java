@@ -1,7 +1,7 @@
 package distributed.systems.core;
 
-import java.net.Socket;
+import distributed.systems.gridscheduler.model.ControlMessage;
 
 public interface IMessageReceivedHandler {
-	public void onMessageReceived(Message message);
+	public ControlMessage onMessageReceived(Message message);
 }

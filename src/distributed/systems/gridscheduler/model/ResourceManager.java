@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
-import distributed.systems.core.IServerMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
@@ -28,7 +27,7 @@ import distributed.systems.core.SynchronizedSocket;
  * @author Niels Brouwers, Boaz Pat-El
  *
  */
-public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler, IServerMessageReceivedHandler {
+public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler {
 	
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
@@ -217,7 +216,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * pre: parameter 'message' should not be null 
 	 * @param message a message
 	 */
-	public void onMessageReceived(Message message) {
+	public ControlMessage onMessageReceived(Message message) {
 		// preconditions
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";
@@ -236,23 +235,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			
 			System.out.println("GSList:" + gsList);
 			for(InetSocketAddress address : gsList) {
-				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin);
-				msg.setUrl(this.socketURL);
-				msg.setPort(socketPort);
-				syncSocket.sendMessage(msg, address);				
+				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketURL, socketPort);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+				syncClientSocket.sendMessage();
 			}
 
 		}
-
-	}
-
-	@Override
-	public synchronized ControlMessage onServerMessageReceived(Message message) {
-		// preconditions
-		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
-		assert(message != null) : "parameter 'message' cannot be null";
-
-		ControlMessage controlMessage = (ControlMessage)message;
+		
 
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.RequestLoad)
@@ -279,8 +268,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			return replyMessage;
 		}
 		
-		
 		return null;
+
 	}
+
 
 }
