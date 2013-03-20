@@ -1,11 +1,16 @@
 package distributed.systems.core;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import distributed.systems.gridscheduler.model.*;
 
 
-public class LogEntry {
+public class LogEntry implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8054991011970570003L;
 	private InetSocketAddress origin;
 	private Long id; //Generic id can be JobId, ClusterId and GSId
 	private String event; 

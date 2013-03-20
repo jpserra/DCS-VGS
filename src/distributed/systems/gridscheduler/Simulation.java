@@ -66,10 +66,16 @@ public class Simulation implements Runnable {
 
 
 		//Print log
-		System.out.println("Simulation Finished, printing Log...");
+		System.out.println("Simulation Finished, printing Log... GS1");
 
 
 		for(LogEntry e: gs1.getFullLog())
+			System.out.println(e.toString());
+		
+		System.out.println("Simulation Finished, printing Log... GS2");
+
+
+		for(LogEntry e: gs2.getFullLog())
 			System.out.println(e.toString());
 
 		// Now perform the cleanup
@@ -92,17 +98,20 @@ public class Simulation implements Runnable {
 	 */
 	public void run() {
 		long jobId = 0;
+		//to randomize the job attribution to clusters
+		int cId = 0;
 		// Do not stop the simulation as long as the gridscheduler panel remains open
 		while (gridSchedulerPanel.isVisible()) {
 			// Add a new job to the system that take up random time
 			Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
+			cId = (int)(Math.random() * (nrClusters));
 			clusters[0].getResourceManager().addJob(job);
 
 			try {
 				// Sleep a while before creating a new job
 				Thread.sleep(50L);
 				//Limit number of jobs
-				if (jobId == 400) {
+				if (jobId == 200) {
 					boolean finished = false;
 					while(!finished){
 						outerLoop:	for( int i= 0; i< nrClusters; i++){

@@ -2,7 +2,7 @@ package distributed.systems.gridscheduler.model;
 
 import java.net.InetSocketAddress;
 import java.util.Set;
-
+import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
 
 /**
@@ -24,7 +24,7 @@ public class ControlMessage extends Message {
 	private final ControlMessageType type;
 	private String url;
 	private int port;
-
+	private LogEntry logEntry;
 	private Job job;
 	private int load;
 	private Set<InetSocketAddress> gridSchedulersList;
@@ -50,6 +50,14 @@ public class ControlMessage extends Message {
 	public ControlMessage(ControlMessageType type, Job job, String url, int port) {
 		this.type = type;
 		this.job = job;
+		this.url = url;
+		this.port = port;
+
+	}
+	
+	public ControlMessage(ControlMessageType type, LogEntry logEntry, String url, int port) {
+		this.type = type;
+		this.logEntry = logEntry;
 		this.url = url;
 		this.port = port;
 
@@ -135,5 +143,13 @@ public class ControlMessage extends Message {
 
 	public void setGridSchedulersList(Set<InetSocketAddress> gridSchedulersList) {
 		this.gridSchedulersList = gridSchedulersList;
+	}
+
+	public LogEntry getLogEntry() {
+		return logEntry;
+	}
+
+	public void setLogEntry(LogEntry logEntry) {
+		this.logEntry = logEntry;
 	}
 }

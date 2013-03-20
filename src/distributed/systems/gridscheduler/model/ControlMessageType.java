@@ -28,6 +28,10 @@ public enum ControlMessageType {
 	
 	// GS to GS
 	GSRequestsGSList,
+	GSSendLogEntry,
+	GSLogEntryAck,
+	
+	
 
 	// GS to GS or GS to RM
 	ReplyGSList

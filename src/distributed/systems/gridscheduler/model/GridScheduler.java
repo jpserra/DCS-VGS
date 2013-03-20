@@ -216,6 +216,15 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 
 		}
+		
+		
+		//Receives LogEntry from another GridScheduler
+		if (controlMessage.getType() == ControlMessageType.GSSendLogEntry)
+		{
+			this.logEntry = controlMessage.getLogEntry();
+			log.add(this.logEntry);
+			
+		}
 				
 		return null;
 	}
@@ -311,15 +320,27 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	}
 
 	//Method called when a message arrives
-	private void logMessage(ControlMessage message) {
+	private synchronized void  logMessage(ControlMessage message) {
 			
 		//TODO Sincronizao do log... Ver as mensagens que tim de ser logadas.
 				// Chamar um metodo que fala isto nos locais adequados.
 			
-		if(message.getType() != ControlMessageType.ReplyLoad){
+		if(message.getType() != ControlMessageType.ReplyLoad && message.getType() != ControlMessageType.GSSendLogEntry ){
 			this.logEntry = new LogEntry(message);
 			log.add(this.logEntry);
+		
+		
+		ControlMessage msg = new ControlMessage(ControlMessageType.GSSendLogEntry, this.logEntry, url, port);
+		
+		
+		for(InetSocketAddress address : gridSchedulersList) {
+			if (address.getPort() == this.getPort()) continue;
+			System.out.println("Sending logEntry from: "+ this.url +":"+ this.port +"to:" + address.toString());
+			syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+			syncClientSocket.sendMessageWithoutResponse();
+		}		
 		}
+		
 	}
 	
 	 /*
