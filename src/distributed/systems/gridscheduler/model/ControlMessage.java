@@ -39,6 +39,22 @@ public class ControlMessage extends Message {
 	public ControlMessage(ControlMessageType type) {
 		this.type = type;
 	}
+	
+	public ControlMessage(ControlMessageType type, String url, int port) {
+		this.type = type;
+		this.url = url;
+		this.port = port;
+
+	}
+	
+	public ControlMessage(ControlMessageType type, Job job, String url, int port) {
+		this.type = type;
+		this.job = job;
+		this.url = url;
+		this.port = port;
+
+	}
+
 
 	/**
 	 * @return the job

@@ -32,9 +32,9 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 	private ConcurrentLinkedQueue<Job> jobQueue;
 	
 	// local url
-	private final String url;
+	private  String url;
 	// local port
-	private final int port;
+	private  int port;
 	
 	private Set<InetSocketAddress> gridSchedulersList;
 	
@@ -65,20 +65,8 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
 		assert(port > 0) : "parameter 'port'";
-
-		// init members
-		this.url = url;
-		this.port = port;
 		
-		gridSchedulersList = new HashSet<InetSocketAddress>();
-		gridSchedulersList.add(new InetSocketAddress(url, port));
-		
-		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
-		this.jobQueue = new ConcurrentLinkedQueue<Job>();
-		this.log = new ArrayList<LogEntry>();	
-		
-		syncSocket = new SynchronizedSocket(url, port);
-		syncSocket.addMessageReceivedHandler(this);
+		initilizeGridScheduler(url, port);
 
 		running = true;
 		pollingThread = new Thread(this);
@@ -92,6 +80,23 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 		assert(otherGSUrl != null) : "parameter 'url' cannot be null";
 		assert(otherGSPort > 0) : "parameter 'port'";
 
+		
+		initilizeGridScheduler(url, port);
+
+		
+		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList, url, port);
+		
+		//Usar um socket diferente para fazer o envio das mensagens.
+		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort),this);
+		syncClientSocket.sendMessage();
+		
+		running = true;
+		pollingThread = new Thread(this);
+		pollingThread.start();
+		
+	}
+	
+	private void initilizeGridScheduler(String url, int port){
 		// init members
 		this.url = url;
 		this.port = port;
@@ -102,22 +107,10 @@ public class GridScheduler implements IMessageReceivedHandler,IServerMessageRece
 		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.log = new ArrayList<LogEntry>();	
-				
-		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList);
-		cMessage.setUrl(url);
-		cMessage.setPort(port);
 		
 		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
-//		syncSocket.sendMessage(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort));
-		
-		//Usar um socket diferente para fazer o envio das mensagens.
-		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort),this);
-		syncClientSocket.sendMessage();
-		
-		running = true;
-		pollingThread = new Thread(this);
-		pollingThread.start();
+
 		
 	}
 	
