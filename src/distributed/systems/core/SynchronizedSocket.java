@@ -14,8 +14,12 @@ public class SynchronizedSocket extends Thread {
 
 	private ServerSocket serverSocket;
 	private IMessageReceivedHandler handler;
-	
+	private String localUrl;
+	private int localPort;
+
 	public SynchronizedSocket(String localUrl, int localPort) {
+		this.localUrl = localUrl;
+		this.localPort = localPort;
 		try {
 			serverSocket = new ServerSocket(localPort);
 		} catch (IOException e) {
@@ -75,7 +79,7 @@ public class SynchronizedSocket extends Thread {
 
 	public void addMessageReceivedHandler(IMessageReceivedHandler handler) {
 		this.handler = handler;
-		Thread t = new Thread(this);
+		Thread t = new Thread( this);
 		t.start();
 	}
 	

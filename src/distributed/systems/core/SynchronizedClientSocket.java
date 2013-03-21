@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.net.SocketTimeoutException;
 
 import distributed.systems.gridscheduler.model.ControlMessage;
+import distributed.systems.gridscheduler.model.SyncLog;
 
 
 public class SynchronizedClientSocket extends Thread {
@@ -17,6 +18,7 @@ public class SynchronizedClientSocket extends Thread {
 	private IMessageReceivedHandler handler;
 	private InetSocketAddress address;
 	private boolean requiresRepsonse;
+	private SyncLog syncLog;
 
 	
 	public SynchronizedClientSocket(ControlMessage cMessage, InetSocketAddress address, IMessageReceivedHandler handler) {
@@ -57,6 +59,11 @@ public class SynchronizedClientSocket extends Thread {
 				socket.setSoTimeout(20000);
 				in = new ObjectInputStream(socket.getInputStream());
 				msg = (ControlMessage)in.readObject();
+				if (syncLog != null ) {
+					syncLog.setArrived();
+					System.out.println("LIBERDADE!!!!!!!!!!!!!@@@@@@@@@@@@@");
+				}
+
 				handler.onMessageReceived(msg);
 				in.close();
 
@@ -86,12 +93,19 @@ public class SynchronizedClientSocket extends Thread {
 
 	}
 	
-	public Thread sendMessage() {
+	public void sendMessage() {
 		requiresRepsonse = true;
 		Thread t = new Thread(this);
 		t.start();
-		return t;
 	}
+	
+	public void sendLogMessage(SyncLog syncLog) {
+		this.syncLog = syncLog;
+		requiresRepsonse = true;
+		Thread t = new Thread(this);
+		t.start();
+	}
+
 	
 	public void sendMessageWithoutResponse() {
 		requiresRepsonse = false;

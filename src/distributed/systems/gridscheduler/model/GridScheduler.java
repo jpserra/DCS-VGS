@@ -208,17 +208,73 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			//return null;
 		}
 		
+		
+		
 		if (controlMessage.getType() == ControlMessageType.JobArrival) {			
-			
+			SyncLog syncLog = new SyncLog();
+
 			for(InetSocketAddress address : gridSchedulersList) {
 				if (address.getHostString() == this.getUrl() && address.getPort() == this.getPort()) continue;
 				ControlMessage msg = new ControlMessage(ControlMessageType.GSLogJobArrival, url, port);
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
-				Thread t = syncClientSocket.sendMessage();
+				syncClientSocket.sendLogMessage(syncLog);
+				//System.out.println("Envia pedido de liberdade...");
+
+			}
+			//syncLog.check();		
+			
+			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
+				ControlMessage msg = new ControlMessage(ControlMessageType.AddJobAck, url, port);
+				syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getJob().getOriginalRM(), this);
+				syncClientSocket.sendMessageWithoutResponse();			
 			}
 			
+			return new ControlMessage(ControlMessageType.JobArrivalAck, url, port);
+		}
+		
+		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival) {			
 			
-			//return null;
+			//Logs message
+ 
+			return new ControlMessage(ControlMessageType.GSLogJobArrivalAck, url, port);
+		}
+		
+		if (controlMessage.getType() == ControlMessageType.JobStarted) {			
+			SyncLog syncLog = new SyncLog();
+
+			for(InetSocketAddress address : gridSchedulersList) {
+				if (address.getHostString() == this.getUrl() && address.getPort() == this.getPort()) continue;
+				ControlMessage msg = new ControlMessage(ControlMessageType.GSLogJobStarted, url, port);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+				syncClientSocket.sendLogMessage(syncLog);
+			}
+			//syncLog.check();		
+						
+			return new ControlMessage(ControlMessageType.JobStartedAck, url, port);
+		}
+		
+		if (controlMessage.getType() == ControlMessageType.GSLogJobStarted) {				
+			//Logs message
+			return new ControlMessage(ControlMessageType.GSLogJobStartedAck, url, port);
+		}
+		
+		if (controlMessage.getType() == ControlMessageType.JobCompleted) {			
+			SyncLog syncLog = new SyncLog();
+
+			for(InetSocketAddress address : gridSchedulersList) {
+				if (address.getHostString() == this.getUrl() && address.getPort() == this.getPort()) continue;
+				ControlMessage msg = new ControlMessage(ControlMessageType.GSLogJobCompleted, url, port);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+				syncClientSocket.sendLogMessage(syncLog);
+			}
+			//syncLog.check();		
+						
+			return new ControlMessage(ControlMessageType.JobCompletedAck, url, port);
+		}
+		
+		if (controlMessage.getType() == ControlMessageType.GSLogJobCompleted) {				
+			//Logs message
+			return new ControlMessage(ControlMessageType.GSLogJobCompletedAck, url, port);
 		}
 		
 		// resource manager wants to join this grid scheduler 

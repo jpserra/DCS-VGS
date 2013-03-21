@@ -115,14 +115,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		int index;
 		InetSocketAddress address;
-
+		job.setOriginalRM(new InetSocketAddress(socketURL, socketPort));
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 
-			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob);
-			controlMessage.setJob(job);
-			controlMessage.setUrl(this.socketURL);
-			controlMessage.setPort(this.socketPort);
+			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, socketURL, socketPort);
 
 			//TODO Add job is always adding to the same gridScheduler
 			//syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
@@ -279,25 +276,31 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			return replyMessage;
 		}
 
-		// resource manager wants to offload a job to us 
+		// resource manager receives add Job 
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
 			writeToBinary(logfilename,controlMessage.getJob(),true);
 
 			jobQueue.add(controlMessage.getJob());
 
+			ControlMessage msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.socketURL, this.socketPort);
+			
+			//Now only sends message to the GS from where the message came from.
+			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this);
+			syncClientSocket.sendMessage();
+
 			scheduleJobs();
 
-			ControlMessage replyMessage = new ControlMessage(ControlMessageType.AddJobAck);
-			replyMessage.setUrl(socketURL);
-			replyMessage.setPort(socketPort);
-			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
-			//return replyMessage;
 			return null;
 
 		}
 		
-		// resource manager wants to offload a job to us 
+		if (controlMessage.getType() == ControlMessageType.AddJobAck)
+		{
+			return null;
+		}
+		
+		/*
 		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival)
 		{			
 			//Logs
@@ -309,7 +312,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//return replyMessage;
 			return null;
 
-		}
+		}*/
+		
+		
 
 		return null;
 

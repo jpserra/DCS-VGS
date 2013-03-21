@@ -1,6 +1,7 @@
 package distributed.systems.gridscheduler.model;
 
 import java.io.Serializable;
+import java.net.InetSocketAddress;
 
 /**
  * This class represents a job that can be executed on a grid. 
@@ -9,9 +10,15 @@ import java.io.Serializable;
  *
  */
 public class Job implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -877471067429263379L;
 	private long duration;
 	private JobStatus status;
 	private long id;
+	private InetSocketAddress originalRM;
+
 
 	/**
 	 * Constructs a new Job object with a certain duration and id. The id has to be unique
@@ -31,6 +38,7 @@ public class Job implements Serializable{
 		this.duration = duration;
 		this.status = JobStatus.Waiting;
 		this.id = id; 
+		this.originalRM = null;
 	}
 
 	/**
@@ -70,6 +78,14 @@ public class Job implements Serializable{
 	 */
 	public String toString() {
 		return "Job {ID = " + id + " "+status+" }";
+	}
+
+	public InetSocketAddress getOriginalRM() {
+		return originalRM;
+	}
+
+	public void setOriginalRM(InetSocketAddress originalRM) {
+		this.originalRM = originalRM;
 	}
 
 }
