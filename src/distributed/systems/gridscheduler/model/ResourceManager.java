@@ -1,10 +1,18 @@
 package distributed.systems.gridscheduler.model;
 
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
@@ -28,11 +36,14 @@ import distributed.systems.core.SynchronizedSocket;
  *
  */
 public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler {
-	
+
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
 	private String socketURL;
 	private int socketPort;
+
+	private String logfilename = "";
+
 
 	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
@@ -64,11 +75,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.cluster = cluster;
 		this.socketURL = cluster.getName();
 		this.socketPort = cluster.getPort();
+
+		logfilename += socketURL+":"+socketPort+".log";
 		// Number of jobs in the queue must be larger than the number of nodes, because
 		// jobs are kept in queue until finished. The queue is a bit larger than the 
 		// number of nodes for efficiency reasons - when there are only a few more jobs than
 		// nodes we can assume a node will become available soon to handle that job.
-//		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
+		//		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
 
 		/*
 		//LocalSocket lSocket = new LocalSocket();
@@ -77,7 +90,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		//socket.register(socketURL);
 
 		socket.addMessageReceivedHandler(this);
-		*/
+		 */
+
+
+
 	}
 
 	/**
@@ -96,7 +112,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// check preconditions
 		assert(job != null) : "the parameter 'job' cannot be null";
 		assert(gridSchedulerURL != null) : "No grid scheduler URL has been set for this resource manager";
-		
+
 		int index;
 		InetSocketAddress address;
 
@@ -107,20 +123,21 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			controlMessage.setJob(job);
 			controlMessage.setUrl(this.socketURL);
 			controlMessage.setPort(this.socketPort);
-			
+
 			//TODO Add job is always adding to the same gridScheduler
 			//syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
-			
+
 			index = (int)(Math.random() * ((gsList.size()-1) + 1));
 			address = (InetSocketAddress)gsList.toArray()[index];
-			
+
 			syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this);
 			syncClientSocket.sendMessageWithoutResponse();
-			
+
 			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostString()+":"+address.getPort()+"]\n");
 
 			// otherwise store it in the local queue
 		} else {
+			writeToBinary(logfilename,job,true);
 			jobQueue.add(job);
 			scheduleJobs();
 		}
@@ -151,7 +168,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		Job waitingJob;
 
 		while ( ((waitingJob = getWaitingJob()) != null) && ((freeNode = cluster.getFreeNode()) != null) ) {
+
 			freeNode.startJob(waitingJob);
+			writeToBinary(logfilename,waitingJob,true);
+
 		}
 
 	}
@@ -166,6 +186,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(job != null) : "parameter 'job' cannot be null";
 
 		// job finished, remove it from our pool
+		writeToBinary(logfilename,job,true);
+
 		jobQueue.remove(job);
 	}
 
@@ -175,11 +197,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public String getGridSchedulerURL() {
 		return gridSchedulerURL;
 	}
-	
+
 	public int getGridSchedulerPort() {
 		return gridSchedulerPort;
 	}
 
+	public String getLogFileName() {
+		return logfilename;
+	}
 	/**
 	 * Connect to a grid scheduler
 	 * <p>
@@ -193,12 +218,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		this.gridSchedulerURL = gridSchedulerURL;
 		this.gridSchedulerPort = gridSchedulerPort;
-		
 
-		
+
+
 		syncSocket = new SynchronizedSocket(socketURL, socketPort);
 		syncSocket.addMessageReceivedHandler(this);
-		
+
 		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList);
 		message.setUrl(socketURL);
 		message.setPort(socketPort);
@@ -227,12 +252,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
 			System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
 		}
-		
+
 
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
 			gsList = controlMessage.getGridSchedulersList();
-			
+
 			System.out.println("GSList:" + gsList);
 			for(InetSocketAddress address : gsList) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketURL, socketPort);
@@ -241,7 +266,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 		}
-		
+
 
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.RequestLoad)
@@ -253,21 +278,23 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
 			return replyMessage;
 		}
-		
+
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
+			writeToBinary(logfilename,controlMessage.getJob(),true);
+
 			jobQueue.add(controlMessage.getJob());
-			
+
 			scheduleJobs();
-			
+
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.AddJobAck);
 			replyMessage.setUrl(socketURL);
 			replyMessage.setPort(socketPort);
 			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
 			return replyMessage;
 		}
-		
+
 		return null;
 
 	}
@@ -276,7 +303,63 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public void onExceptionThrown(Message message,
 			InetSocketAddress destinationAddress) {
 		// TODO Auto-generated method stub
-		
+
+	}
+
+	public  void writeToBinary (String filename, Object obj, boolean append){
+		File file = new File (filename);
+		ObjectOutputStream out = null;
+
+		try{
+			if (!file.exists () || !append) out = new ObjectOutputStream (new FileOutputStream (filename));
+			else out = new AppendableObjectOutputStream (new FileOutputStream (filename, append));
+			out.writeObject(obj);
+			out.flush ();
+		}catch (Exception e){
+			e.printStackTrace ();
+		}finally{
+			try{
+				if (out != null) out.close ();
+			}catch (Exception e){
+				e.printStackTrace ();
+			}
+		}
+	}
+
+	public ArrayList<Job> readFromBinaryFile (String filename){
+		File file = new File (filename);
+		ArrayList<Job> recoveredLog = new ArrayList<Job>();
+		if (file.exists ()){
+			ObjectInputStream ois = null;
+			try{
+				ois = new ObjectInputStream (new FileInputStream (filename));
+				while (true){
+
+					Job j = (Job)ois.readObject ();
+					recoveredLog.add(j);
+				}
+			}catch (EOFException e){
+
+			}catch (Exception e){
+				e.printStackTrace ();
+			}finally{
+				try{
+					if (ois != null) ois.close();
+				}catch (IOException e){
+					e.printStackTrace ();
+				}
+			}
+		}
+		return recoveredLog;
+	}
+
+	private class AppendableObjectOutputStream extends ObjectOutputStream {
+		public AppendableObjectOutputStream(OutputStream out) throws IOException {
+			super(out);
+		}
+
+		@Override
+		protected void writeStreamHeader() throws IOException {}
 	}
 
 

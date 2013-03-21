@@ -69,7 +69,7 @@ public class Job implements Serializable{
 	 * @return a string representation of this job object
 	 */
 	public String toString() {
-		return "Job {ID = " + id + "}";
+		return "Job {ID = " + id + " "+status+" }";
 	}
 
 }

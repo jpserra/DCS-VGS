@@ -81,8 +81,14 @@ public class Simulation implements Runnable {
 		// Now perform the cleanup
 
 		// Stop clusters
-		for (Cluster cluster : clusters)
+		for (Cluster cluster : clusters){
+			System.out.println("LOG DO RM Dum CLUSTER");
+			for(Job j: cluster.getResourceManager().readFromBinaryFile(cluster.getResourceManager().getLogFileName())){
+				System.out.println(j.toString());
+			}
+		
 			cluster.stopPollThread();
+		}
 
 		// Stop grid scheduler
 		gs1.stopPollThread();
