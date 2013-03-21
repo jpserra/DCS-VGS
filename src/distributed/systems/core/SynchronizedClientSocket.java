@@ -86,10 +86,11 @@ public class SynchronizedClientSocket extends Thread {
 
 	}
 	
-	public void sendMessage() {
+	public Thread sendMessage() {
 		requiresRepsonse = true;
 		Thread t = new Thread(this);
 		t.start();
+		return t;
 	}
 	
 	public void sendMessageWithoutResponse() {

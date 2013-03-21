@@ -30,6 +30,7 @@ public enum ControlMessageType {
 	GSRequestsGSList,
 	GSSendLogEntry,
 	GSLogEntryAck,
+	GSLogJobArrival,
 	GSLogJobArrivalAck,
 
 	

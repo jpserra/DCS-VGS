@@ -265,7 +265,23 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			replyMessage.setUrl(socketURL);
 			replyMessage.setPort(socketPort);
 			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
-			return replyMessage;
+			//return replyMessage;
+			return null;
+
+		}
+		
+		// resource manager wants to offload a job to us 
+		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival)
+		{			
+			//Logs
+			
+			ControlMessage replyMessage = new ControlMessage(ControlMessageType.GSLogJobArrivalAck);
+			replyMessage.setUrl(socketURL);
+			replyMessage.setPort(socketPort);
+			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
+			//return replyMessage;
+			return null;
+
 		}
 		
 		return null;

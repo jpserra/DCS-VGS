@@ -43,7 +43,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	
 	// a hashmap linking each resource manager to an estimated load
 	private ConcurrentHashMap<InetSocketAddress, Integer> resourceManagerLoad;
-
+	
 	// polling frequency, 1hz
 	private long pollSleep = 100;
 	
@@ -208,6 +208,19 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			//return null;
 		}
 		
+		if (controlMessage.getType() == ControlMessageType.JobArrival) {			
+			
+			for(InetSocketAddress address : gridSchedulersList) {
+				if (address.getHostString() == this.getUrl() && address.getPort() == this.getPort()) continue;
+				ControlMessage msg = new ControlMessage(ControlMessageType.GSLogJobArrival, url, port);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+				Thread t = syncClientSocket.sendMessage();
+			}
+			
+			
+			//return null;
+		}
+		
 		// resource manager wants to join this grid scheduler 
 		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure
 		// no jobs are scheduled to it until we know the actual load
@@ -293,7 +306,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					ControlMessage cMessage = new ControlMessage(ControlMessageType.AddJob, job,this.getUrl(), this.getPort());					
 					SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this);
 					jobQueue.remove(job);
-					syncClientSocket.sendMessage();
+					syncClientSocket.sendMessageWithoutResponse();
 					//syncSocket.sendMessage(cMessage, leastLoadedRM);
 					
 	
