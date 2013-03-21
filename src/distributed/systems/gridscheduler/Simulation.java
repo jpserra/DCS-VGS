@@ -39,8 +39,8 @@ public class Simulation implements Runnable {
 		GridScheduler gs1, gs2;
 
 		// Setup the model. Create a grid scheduler and a set of clusters.
-		gs1 = new GridScheduler("localhost", 25000);
-		gs2 = new GridScheduler("localhost", 25001, "localhost", 25000);
+		gs1 = new GridScheduler("localhost", 50000);
+		gs2 = new GridScheduler("localhost", 50001, "localhost", 50000);
 
 		// Create a new gridscheduler panel so we can monitor our components
 		gridSchedulerPanel = new GridSchedulerPanel(gs1,gs2);
@@ -50,7 +50,7 @@ public class Simulation implements Runnable {
 		System.out.println("Init Clusters");
 		clusters = new Cluster[nrClusters];
 		for (int i = 0; i < nrClusters; i++) {
-			clusters[i] = new Cluster(i, "localhost", 25050 + i, gs1.getUrl(), gs1.getPort(), nrNodes); 
+			clusters[i] = new Cluster(i, "localhost", 50050 + i, gs1.getUrl(), gs1.getPort(), nrNodes); 
 
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);
