@@ -36,11 +36,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private  int port;
 	
 	private Set<InetSocketAddress> gridSchedulersList;
-	
-	// communications socket
-	private SynchronizedSocket syncSocket;
-	private SynchronizedClientSocket syncClientSocket;
-	
+		
 	// a hashmap linking each resource manager to an estimated load
 	private ConcurrentHashMap<InetSocketAddress, Integer> resourceManagerLoad;
 	
@@ -85,6 +81,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList, url, port);
 		
+		SynchronizedClientSocket syncClientSocket;
 		//Usar um socket diferente para fazer o envio das mensagens.
 		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSUrl, otherGSPort),this);
 		syncClientSocket.sendMessage();
@@ -107,7 +104,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.log = new ArrayList<LogEntry>();	
 		
-		syncSocket = new SynchronizedSocket(url, port);
+		SynchronizedSocket syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
 
 		
@@ -146,11 +143,12 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * </DL> 
 	 * @param message a message
 	 */
-	public synchronized ControlMessage onMessageReceived(Message message) {
+	public ControlMessage onMessageReceived(Message message) {
 		// preconditions
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";
 		
+		SynchronizedClientSocket syncClientSocket;
 		ControlMessage controlMessage = (ControlMessage)message;
 		
 		//TODO Sincronizacao do log... Ver as mensagens que tem de ser logadas.
@@ -182,11 +180,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			msg.setGridSchedulersList(gridSchedulersList);
 			//syncSocket.sendMessage(msg, controlMessage.getInetAddress());
 			return msg;
-		}		// TODO Auto-generated method stub
+		}		
 		
 		if (controlMessage.getType() == ControlMessageType.GSRequestsGSList) {
 			Set<InetSocketAddress> gridSchedulersListTemp = gridSchedulersList;
-			//InetSocketAddress[] gridSchedulersListTemp = gridSchedulersList; 
 			gridSchedulersList.add(controlMessage.getInetAddress());
 			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList, url, port);
 			msg.setGridSchedulersList(gridSchedulersList);	
@@ -221,7 +218,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				//System.out.println("Envia pedido de liberdade...");
 
 			}
-			//syncLog.check();		
+			syncLog.check();		
 			
 			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.AddJobAck, url, port);
@@ -412,15 +409,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			log.add(this.logEntry);
 		
 			ControlMessage msg = new ControlMessage(ControlMessageType.GSSendLogEntry, this.logEntry, url, port);
-			
+			SynchronizedClientSocket syncClientSocket;
 			for(InetSocketAddress address : gridSchedulersList) {
 				if (address.getHostName() == this.getUrl() && address.getPort() == this.getPort()) continue; //Doe
 				System.out.println("Sending logEntry from: "+ this.url +":"+ this.port +"to:" + address.toString());
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
 				syncClientSocket.sendMessage();
 			}		
-		}
-		
+		}	
 	}
 	
 	 /*

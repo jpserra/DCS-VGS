@@ -44,7 +44,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private String logfilename = "";
 
-
 	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
 
