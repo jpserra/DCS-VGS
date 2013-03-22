@@ -34,7 +34,8 @@ public class SynchronizedClientSocket extends Thread {
 		ObjectInputStream in = null;
 		ControlMessage msg = null;
 		ObjectOutputStream out = null;
-		
+		ControlMessage message = null;
+
 		try {
 			socket.connect(address);
 		} catch (IOException e1) {
@@ -53,7 +54,6 @@ public class SynchronizedClientSocket extends Thread {
 		}
 
 		if (requiresRepsonse) {
-
 			// Espera pela recepo da resposta at um determinado ponto.
 			try {
 				socket.setSoTimeout(20000);
@@ -61,7 +61,6 @@ public class SynchronizedClientSocket extends Thread {
 				msg = (ControlMessage)in.readObject();
 				if (syncLog != null ) {
 					syncLog.setArrived();
-					System.out.println("LIBERDADE!!!!!!!!!!!!!@@@@@@@@@@@@@");
 				}
 
 				handler.onMessageReceived(msg);
@@ -69,10 +68,10 @@ public class SynchronizedClientSocket extends Thread {
 
 			} catch (SocketTimeoutException e) {
 				System.out.println("Timeout!!!!");
-				handler.onExceptionThrown(cMessage, address);
+				message = handler.onExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (IOException e) {
-				handler.onExceptionThrown(cMessage, address);
+				message = handler.onExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				// TODO Auto-generated catch block
@@ -88,6 +87,8 @@ public class SynchronizedClientSocket extends Thread {
 			e.printStackTrace();
 		}
 
+		if(message != null) sendMessageInSameThread(message);
+		
 		//TODO Procesar a mensagem... Problemas com concorrencia? Talvez fazer o metodo syncronized
 		//handler.onMessageReceived(msg);
 
@@ -112,7 +113,11 @@ public class SynchronizedClientSocket extends Thread {
 		Thread t = new Thread(this);
 		t.start();
 	}
-
-
+	
+	public void sendMessageInSameThread(ControlMessage message) {
+		this.cMessage = message;
+		requiresRepsonse = true;
+		this.run();
+	}
 
 }

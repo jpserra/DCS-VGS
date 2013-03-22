@@ -7,5 +7,5 @@ import distributed.systems.gridscheduler.model.SyncLog;
 
 public interface IMessageReceivedHandler {
 	public ControlMessage onMessageReceived(Message message);
-	public void onExceptionThrown(Message message, InetSocketAddress destinationAddress);
+	public ControlMessage onExceptionThrown(Message message, InetSocketAddress destinationAddress);
 }

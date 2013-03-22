@@ -12,6 +12,9 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Queue;
 import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
@@ -43,6 +46,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private int socketPort;
 
 	private String logfilename = "";
+	
+	private final long timeOut = 1000;
 
 	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
@@ -51,10 +56,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private String gridSchedulerURL = null;
 	private int gridSchedulerPort;
 
-	private SynchronizedSocket syncSocket;
-	private SynchronizedClientSocket syncClientSocket;
+	private ConcurrentHashMap<InetSocketAddress, Integer> gsList; //Gs lists addresses and number of failures
 
-	private Set<InetSocketAddress> gsList;
+	private ConcurrentHashMap<Long, Timer> jobTimers; 
+	//private ConcurrentHashMap<InetSocketAddress> gsList;
 
 	/**
 	 * Constructs a new ResourceManager object.
@@ -70,12 +75,15 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(cluster != null);
 
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
-
 		this.cluster = cluster;
 		this.socketURL = cluster.getName();
 		this.socketPort = cluster.getPort();
 
 		logfilename += socketURL+":"+socketPort+".log";
+		
+		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
+		
+		jobTimers = new ConcurrentHashMap<Long, Timer>();
 		// Number of jobs in the queue must be larger than the number of nodes, because
 		// jobs are kept in queue until finished. The queue is a bit larger than the 
 		// number of nodes for efficiency reasons - when there are only a few more jobs than
@@ -95,6 +103,27 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	}
 
+	
+	private class ScheduledTask extends TimerTask implements Runnable {
+		private IMessageReceivedHandler handler;
+		private ControlMessage message;
+		private InetSocketAddress destinationAddress;
+		
+		ScheduledTask(IMessageReceivedHandler handler, ControlMessage message, InetSocketAddress destinationAddress){
+			 this.handler = handler;
+			 this.message = message;
+			 this.destinationAddress = destinationAddress;
+		}
+
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			System.out.println("TIME OUT!");
+			handler.onExceptionThrown(message, destinationAddress);
+		}
+	}
+	
+	
 	/**
 	 * Add a job to the resource manager. If there is a free node in the cluster the job will be
 	 * scheduled onto that Node immediately. If all nodes are busy the job will be put into a local
@@ -118,16 +147,20 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 
-			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, socketURL, socketPort);
 
 			//TODO Add job is always adding to the same gridScheduler
 			//syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
 
 			index = (int)(Math.random() * ((gsList.size()-1) + 1));
-			address = (InetSocketAddress)gsList.toArray()[index];
+			address = (InetSocketAddress)gsList.keySet().toArray()[index];
 
-			syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this);
+			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, socketURL, socketPort);
+			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this);
 			syncClientSocket.sendMessageWithoutResponse();
+			
+			Timer t = new Timer();
+			t.schedule(new ScheduledTask(this, controlMessage, address), timeOut);
+			jobTimers.put(job.getId(), t);
 
 			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostString()+":"+address.getPort()+"]\n");
 
@@ -216,16 +249,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.gridSchedulerPort = gridSchedulerPort;
 
 
-
+		SynchronizedSocket syncSocket;
 		syncSocket = new SynchronizedSocket(socketURL, socketPort);
 		syncSocket.addMessageReceivedHandler(this);
 
-		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList);
-		message.setUrl(socketURL);
-		message.setPort(socketPort);
-		//syncSocket.sendMessage(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort));				
-
-		syncClientSocket = new SynchronizedClientSocket(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort), this);
+		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList, socketURL, socketPort);
+		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(message, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort), this);
 		syncClientSocket.sendMessage();
 
 	}
@@ -250,20 +279,32 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		}
 
 
+		// When Resource manager receives the list of all GS available from the GS that was given when this RM was initialized. The RM will try to join each of the GS
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
-			gsList = controlMessage.getGridSchedulersList();
+			for (InetSocketAddress address:controlMessage.getGridSchedulersList()){
+				if(gsList.replace(address, 0) == null){
+					gsList.put(address, 0);
+				} 
+			}
 
+			SynchronizedClientSocket syncClientSocket;
 			System.out.println("GSList:" + gsList);
-			for(InetSocketAddress address : gsList) {
+			for(InetSocketAddress address : gsList.keySet()) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketURL, socketPort);
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
 				syncClientSocket.sendMessage();
 			}
 
 		}
+		
+		// ResourceManager receives ack that the GS added them to theirs GS list.
+		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoinAck)
+		{
+			//Handled on exception if it doesn't receives ack
+		}
 
-
+		
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.RequestLoad)
 		{
@@ -274,8 +315,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
 			return replyMessage;
 		}
+		
 
-		// resource manager receives add Job 
+		// RM receives add Job from a GS
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
 			writeToBinary(logfilename,controlMessage.getJob(),true);
@@ -285,7 +327,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			ControlMessage msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.socketURL, this.socketPort);
 			
 			//Now only sends message to the GS from where the message came from.
-			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this);
+			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this);
 			syncClientSocket.sendMessage();
 
 			scheduleJobs();
@@ -296,6 +338,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		
 		if (controlMessage.getType() == ControlMessageType.AddJobAck)
 		{
+			
+			Timer t = jobTimers.remove(controlMessage.getJob().getId());
+			if(t != null) t.cancel();
+
 			return null;
 		}
 		
@@ -312,17 +358,55 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			return null;
 
 		}*/
-		
-		
-
 		return null;
-
 	}
+	
+	
 
 	@Override
-	public void onExceptionThrown(Message message,
+	public ControlMessage onExceptionThrown(Message message,
 			InetSocketAddress destinationAddress) {
-		// TODO Auto-generated method stub
+		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
+		assert(message != null) : "parameter 'message' cannot be null";
+		
+		ControlMessage controlMessage = (ControlMessage)message;
+		gsList.replace(destinationAddress, gsList.get(destinationAddress)+1);
+		if (gsList.get(destinationAddress) > 2) {
+			//gsList.remove(destinationAddress);
+			return null;
+		}
+			
+		
+		// resource manager wants to offload a job to us 
+		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
+			return controlMessage;
+		}
+		
+		// if jobAdd fails it will add to the jobQueue again
+		if (controlMessage.getType() == ControlMessageType.AddJob) {
+			this.jobQueue.add(controlMessage.getJob());
+			Timer t = jobTimers.remove(controlMessage.getJob().getId());
+			if (t != null) t.cancel();
+			System.out.println(":::::::::::::::::::::::::::::::::JOB ADDED AGAIN TO QUEUE!");
+		}
+		
+		// resource manager wants to offload a job to us 
+		if (controlMessage.getType() == ControlMessageType.JobArrival ||
+			controlMessage.getType() == ControlMessageType.JobStarted ||
+			controlMessage.getType() == ControlMessageType.JobStarted) {
+			
+			int index = (int)(Math.random() * ((gsList.size()-1) + 1));
+			InetSocketAddress address = (InetSocketAddress)gsList.keySet().toArray()[index];
+			//TODO: Check to not send to the same GS
+			
+			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, address ,this);
+			s.sendMessage();
+			
+			return controlMessage;
+		}
+		
+		//Always tries to send to send the same message again.
+		return null;
 
 	}
 

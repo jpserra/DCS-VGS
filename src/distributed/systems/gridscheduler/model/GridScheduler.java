@@ -47,6 +47,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private Thread pollingThread;
 	private boolean running;
 	
+	SynchronizedSocket syncSocket;
+	
 	/**
 	 * Constructs a new GridScheduler object at a given url.
 	 * <p>
@@ -104,9 +106,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.log = new ArrayList<LogEntry>();	
 		
-		SynchronizedSocket syncSocket = new SynchronizedSocket(url, port);
+		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
-
 		
 	}
 	
@@ -167,22 +168,24 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
+			synchronized (gridSchedulersList) {
+		
 			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
 				gridSchedulersList.add(address);
+			}
 			}
 			System.out.println(gridSchedulersList);
 		}
 		
 		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
-			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList);
-			msg.setUrl(url);
-			msg.setPort(port);
+			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList, url, port);
 			msg.setGridSchedulersList(gridSchedulersList);
 			//syncSocket.sendMessage(msg, controlMessage.getInetAddress());
 			return msg;
 		}		
 		
 		if (controlMessage.getType() == ControlMessageType.GSRequestsGSList) {
+			
 			Set<InetSocketAddress> gridSchedulersListTemp = gridSchedulersList;
 			gridSchedulersList.add(controlMessage.getInetAddress());
 			ControlMessage msg = new ControlMessage(ControlMessageType.ReplyGSList, url, port);
@@ -199,6 +202,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.AddJob) {			
 			jobQueue.add(controlMessage.getJob());
+			
+			
+			
 			//Syncing
 			
 			//ControlMessage msg = new ControlMessage(ControlMessageType.AddJobAck, url, port);
@@ -218,10 +224,11 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				//System.out.println("Envia pedido de liberdade...");
 
 			}
-			syncLog.check();		
+			if(gridSchedulersList.size() > 1)syncLog.check();//Assume that it always gets a response from at least one of the GS	
 			
 			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.AddJobAck, url, port);
+				msg.setJob(controlMessage.getJob());
 				syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getJob().getOriginalRM(), this);
 				syncClientSocket.sendMessageWithoutResponse();			
 			}
@@ -245,7 +252,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
 				syncClientSocket.sendLogMessage(syncLog);
 			}
-			//syncLog.check();		
+			syncLog.check();		
 						
 			return new ControlMessage(ControlMessageType.JobStartedAck, url, port);
 		}
@@ -264,7 +271,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
 				syncClientSocket.sendLogMessage(syncLog);
 			}
-			//syncLog.check();		
+			syncLog.check();		
 						
 			return new ControlMessage(ControlMessageType.JobCompletedAck, url, port);
 		}
@@ -296,8 +303,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		return null;
 	}
 		
+	
+	/*
+	 * 
+	 * onExceptionThrown return null if there is no message to be resent, or return the message to be sent
+	 * 
+	 * */
 	@Override
-	public synchronized void onExceptionThrown(Message message, InetSocketAddress address) {
+	public synchronized ControlMessage onExceptionThrown(Message message, InetSocketAddress address) {
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";
 		
@@ -308,6 +321,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			resourceManagerLoad.remove(address);
 			jobQueue.add(controlMessage.getJob());
 		}
+		
+		return null;
 		
 	}
 	
@@ -362,7 +377,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					syncClientSocket.sendMessageWithoutResponse();
 					//syncSocket.sendMessage(cMessage, leastLoadedRM);
 					
-	
 					// increase the estimated load of that RM by 1 (because we just added a job)
 					int load = resourceManagerLoad.get(leastLoadedRM);
 					resourceManagerLoad.put(leastLoadedRM, load+1);
