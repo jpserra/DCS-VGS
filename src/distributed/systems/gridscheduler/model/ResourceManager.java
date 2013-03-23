@@ -16,6 +16,8 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import javax.sound.midi.ControllerEventListener;
+
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
@@ -367,10 +369,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			return null;
 
 		}*/
+		
 		return null;
+		
 	}
-
-
 
 	@Override
 	public ControlMessage onExceptionThrown(Message message,
@@ -415,7 +417,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	}
 
-
 	public void run() {
 		while (running) {
 			scheduleJobs();
@@ -428,7 +429,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 		}
 	}
-
 
 	/**
 	 * Stop the polling thread. This has to be called explicitly to make sure the program 
