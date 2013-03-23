@@ -117,7 +117,7 @@ public class Simulation implements Runnable {
 				// Sleep a while before creating a new job
 				Thread.sleep(50L);
 				//Limit number of jobs
-				if (jobId == 60) {
+				if (jobId == 200) {
 					boolean finished = false;
 					while(!finished){
 						outerLoop:	for( int i= 0; i< nrClusters; i++){

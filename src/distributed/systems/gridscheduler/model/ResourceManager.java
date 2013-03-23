@@ -87,6 +87,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		logfilename += socketURL+":"+socketPort+".log";
 		
+		File file = new File (logfilename);
+		file.delete();
+		
 		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		
 		jobTimers = new ConcurrentHashMap<Long, Timer>();
@@ -136,7 +139,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// check preconditions
 		assert(job != null) : "the parameter 'job' cannot be null";
 		assert(gridSchedulerURL != null) : "No grid scheduler URL has been set for this resource manager";
-
+		
 		int index;
 		InetSocketAddress address;
 		job.setOriginalRM(new InetSocketAddress(socketURL, socketPort));
