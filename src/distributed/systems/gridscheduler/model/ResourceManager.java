@@ -138,17 +138,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(job != null) : "the parameter 'job' cannot be null";
 		assert(gridSchedulerURL != null) : "No grid scheduler URL has been set for this resource manager";
 		
-		int index;
 		InetSocketAddress address;
 		job.setOriginalRM(new InetSocketAddress(socketURL, socketPort));
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
-
-
-			//syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
-
-			index = (int)(Math.random() * ((gsList.size()-1) + 1));
-			address = (InetSocketAddress)gsList.keySet().toArray()[index];
+			
+			address = getRandomGS();
 
 			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, socketURL, socketPort);
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this);
@@ -162,8 +157,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			// otherwise store it in the local queue
 		} else {
-			writeToBinary(logfilename,job,true);
 			jobQueue.add(job);
+			sendJobEvent(job, ControlMessageType.JobArrival);
+			writeToBinary(logfilename,job,true);
 			scheduleJobs();
 		}
 
@@ -193,10 +189,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		Job waitingJob;
 
 		while ( ((waitingJob = getWaitingJob()) != null) && ((freeNode = cluster.getFreeNode()) != null) ) {
-
 			freeNode.startJob(waitingJob);
+			sendJobEvent(waitingJob,ControlMessageType.JobStarted);
 			writeToBinary(logfilename,waitingJob,true);
-
 		}
 
 	}
@@ -209,7 +204,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public void jobDone(Job job) {
 		// preconditions
 		assert(job != null) : "parameter 'job' cannot be null";
-
+		sendJobEvent(job,ControlMessageType.JobCompleted);
 		// job finished, remove it from our pool
 		writeToBinary(logfilename,job,true);
 
@@ -392,11 +387,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			controlMessage.getType() == ControlMessageType.JobStarted ||
 			controlMessage.getType() == ControlMessageType.JobStarted) {
 			
-			int index = (int)(Math.random() * ((gsList.size()-1) + 1));
-			InetSocketAddress address = (InetSocketAddress)gsList.keySet().toArray()[index];
-			//TODO: Check to not send to the same GS
-			
-			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, address ,this);
+			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, getRandomGS() ,this);
 			s.sendMessage();
 			
 			return controlMessage;
@@ -495,5 +486,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		protected void writeStreamHeader() throws IOException {}
 	}
 
-
+	private InetSocketAddress getRandomGS() {
+		return (InetSocketAddress)gsList.keySet().toArray()[(int)(Math.random() * ((gsList.size()-1) + 1))];
+	}
+	
+	private void sendJobEvent(Job job, ControlMessageType messageType) {
+		ControlMessage msg = new ControlMessage(messageType, job, this.socketURL, this.socketPort);
+		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this);
+		syncClientSocket.sendMessage();
+	}
+	
 }
