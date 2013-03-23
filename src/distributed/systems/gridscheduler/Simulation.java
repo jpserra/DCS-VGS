@@ -22,6 +22,7 @@ import distributed.systems.gridscheduler.model.NodeStatus;
 public class Simulation implements Runnable {
 	// Number of clusters in the simulation
 	private final static int nrClusters = 5;
+	private final static int nrGS= 2;
 
 	// Number of nodes per cluster in the simulation
 	private final static int nrNodes = 50;
@@ -39,19 +40,21 @@ public class Simulation implements Runnable {
 
 		GridScheduler gs1, gs2;
 
+		int nEntities = nrClusters + nrGS;
 		// Setup the model. Create a grid scheduler and a set of clusters.
-		gs1 = new GridScheduler("localhost", 50000);
-		gs2 = new GridScheduler("localhost", 50001, "localhost", 50000);
+		gs1 = new GridScheduler( 0, nEntities,"localhost", 50000);
+		gs2 = new GridScheduler( 1, nEntities, "localhost", 50001, "localhost", 50000);
 
 		// Create a new gridscheduler panel so we can monitor our components
 		gridSchedulerPanel = new GridSchedulerPanel(gs1,gs2);
 		gridSchedulerPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+		
 		// Create the clusters and nods
 		System.out.println("Init Clusters");
 		clusters = new Cluster[nrClusters];
 		for (int i = 0; i < nrClusters; i++) {
-			clusters[i] = new Cluster(i, "localhost", 50050 + i, gs1.getUrl(), gs1.getPort(), nrNodes); 
+			clusters[i] = new Cluster(i+2, nEntities, "localhost", 50050 + i, gs1.getUrl(), gs1.getPort(), nrNodes); 
 
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);

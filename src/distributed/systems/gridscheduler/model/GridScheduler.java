@@ -11,6 +11,7 @@ import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
+import distributed.systems.core.VectorialClock;
 
 /**
  * 
@@ -29,6 +30,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	// job queue
 	private ConcurrentLinkedQueue<Job> jobQueue;
 	
+	private int identifier;
+	private int nEntities;
+	private VectorialClock vClock;
+
 	// local url
 	private  String url;
 	// local port
@@ -57,19 +62,19 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * </DL>
 	 * @param url the gridscheduler's url to register at
 	 */
-	public GridScheduler(String url, int port) {
+	public GridScheduler(int id, int nEntities, String url, int port) {
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
 		assert(port > 0) : "parameter 'port'";
 		
-		initilizeGridScheduler(url, port);
+		initilizeGridScheduler(id, nEntities, url, port);
 
 		running = true;
 		pollingThread = new Thread(this);
 		pollingThread.start();
 	}
 	
-	public GridScheduler(String url, int port, String otherGSUrl, int otherGSPort) {
+	public GridScheduler(int id, int nEntities, String url, int port, String otherGSUrl, int otherGSPort) {
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
 		assert(port > 0) : "parameter 'port'";
@@ -77,7 +82,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		assert(otherGSPort > 0) : "parameter 'port'";
 
 		
-		initilizeGridScheduler(url, port);
+		initilizeGridScheduler(id, nEntities, url, port);
 
 		
 		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList, url, port);
@@ -93,18 +98,21 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		
 	}
 	
-	private void initilizeGridScheduler(String url, int port){
+	private void initilizeGridScheduler(int id, int nEntities,String url, int port){
 		// init members
 		this.url = url;
 		this.port = port;
-		
+		identifier = id;
+		this.nEntities = nEntities;
+
 		gridSchedulersList = new HashSet<InetSocketAddress>();
 		gridSchedulersList.add(new InetSocketAddress(url, port));
 		
 		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.log = new ArrayList<LogEntry>();	
-		
+		vClock = new VectorialClock(nEntities);
+
 		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
 		
@@ -370,11 +378,16 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				
 				if (leastLoadedRM!=null) {
 				
-					ControlMessage cMessage = new ControlMessage(ControlMessageType.AddJob, job,this.getUrl(), this.getPort());					
+					ControlMessage cMessage ;
+					synchronized (this) {
+						vClock.incrementClock(identifier);
+						cMessage = new ControlMessage(ControlMessageType.AddJob, job,this.getUrl(), this.getPort());					
+						cMessage.setClock(vClock.getClock());
+					}
+					
 					SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this);
 					jobQueue.remove(job);
 					syncClientSocket.sendMessageWithoutResponse();
-					//syncSocket.sendMessage(cMessage, leastLoadedRM);
 					
 					// increase the estimated load of that RM by 1 (because we just added a job)
 					int load = resourceManagerLoad.get(leastLoadedRM);

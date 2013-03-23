@@ -38,7 +38,7 @@ public class Cluster implements Runnable {
 	 * @param name the name of this cluster
 	 * @param nrNodes the number of nodes in this cluster
 	 */
-	public Cluster(int id, String clusterUrl, int clusterPort, String gridSchedulerURL, int gridSchedulerPort, int nodeCount) {
+	public Cluster(int id, int nEntities, String clusterUrl, int clusterPort, String gridSchedulerURL, int gridSchedulerPort, int nodeCount) {
 		// Preconditions
 		assert(clusterUrl != null) : "parameter 'clusterUrl' cannot be null";
 		assert(gridSchedulerURL != null) : "parameter 'gridSchedulerURL' cannot be null";
@@ -52,7 +52,7 @@ public class Cluster implements Runnable {
 		nodes = new ArrayList<Node>(nodeCount);
 		
 		// Initialize the resource manager for this cluster
-		resourceManager = new ResourceManager(this);
+		resourceManager = new ResourceManager(id, nEntities,this);
 		resourceManager.connectToGridScheduler(gridSchedulerURL,gridSchedulerPort);
 
 		// Initialize the nodes 

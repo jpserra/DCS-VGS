@@ -76,7 +76,6 @@ public class Node {
 			if (System.currentTimeMillis() - startTime > runningJob.getDuration()) {
 				// job done
 				runningJob.setStatus(JobStatus.Done);
-
 				// fire event handler
 				for (INodeEventHandler handler : handlers)
 					handler.jobDone(runningJob);
