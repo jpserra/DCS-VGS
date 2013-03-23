@@ -115,26 +115,21 @@ public class Simulation implements Runnable {
 
 			try {
 				// Sleep a while before creating a new job
-				Thread.sleep(1L);
+				Thread.sleep(50L);
 				//Limit number of jobs
 				if (jobId == 60) {
 					boolean finished = false;
 					while(!finished){
 						outerLoop:	for( int i= 0; i< nrClusters; i++){
-							if (clusters[i].getResourceManager().getWaitingJob()!= null) {
-								i = 0;
-								continue outerLoop;			
-							}
 							for(Node n: clusters[i].getNodes()){
 								if (n.getStatus() == NodeStatus.Busy){
-									i = 0;
-									continue outerLoop;						
+									break outerLoop;						
 								}
 							}
+							finished = true;
 						}
-					finished = true;
+					
 					}
-					//wait(10000);
 					return;
 				}
 

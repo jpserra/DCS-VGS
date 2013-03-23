@@ -47,7 +47,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private String logfilename = "";
 	
-	private final long timeOut = 1;
+	private final long timeOut = 1000;
 
 	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
@@ -144,7 +144,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 
 
-			//TODO Add job is always adding to the same gridScheduler
 			//syncSocket.sendMessage(controlMessage, new InetSocketAddress(gridSchedulerURL, gridSchedulerPort) );
 
 			index = (int)(Math.random() * ((gsList.size()-1) + 1));
