@@ -379,7 +379,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			addJob(controlMessage.getJob());//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) t.cancel();
-			System.out.println(":::::::::::::::::::::::::::::::::JOB ADDED AGAIN TO QUEUE!");
 		}
 		
 		// resource manager wants to offload a job to us 

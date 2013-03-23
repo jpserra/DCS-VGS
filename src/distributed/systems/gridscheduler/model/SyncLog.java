@@ -12,15 +12,11 @@ public class SyncLog {
 		
 		while(!messageArrived) {
 			try {
-				System.out.println("VAI ESTAR PRESo!!!!!!!!!!!!!");
-
 				wait();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-		System.out.println("NAO ESTA PRESo!!!!!!!!!!!!!");
-		
 	}
 	
 	public synchronized void setArrived(){
