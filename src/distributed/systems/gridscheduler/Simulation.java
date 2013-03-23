@@ -2,6 +2,7 @@ package distributed.systems.gridscheduler;
 
 import javax.swing.JFrame;
 import distributed.systems.core.LogEntry;
+import distributed.systems.core.LogManager;
 import distributed.systems.gridscheduler.gui.ClusterStatusPanel;
 import distributed.systems.gridscheduler.gui.GridSchedulerPanel;
 import distributed.systems.gridscheduler.model.Cluster;
@@ -83,7 +84,7 @@ public class Simulation implements Runnable {
 		// Stop clusters
 		for (Cluster cluster : clusters){
 			System.out.println("LOG DO RM Dum CLUSTER");
-			for(Job j: cluster.getResourceManager().readFromBinaryFile(cluster.getResourceManager().getLogFileName())){
+			for(Object j: LogManager.readFromBinaryFile(cluster.getResourceManager().getLogFileName())){
 				System.out.println(j.toString());
 			}
 

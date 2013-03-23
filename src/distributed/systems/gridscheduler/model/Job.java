@@ -13,7 +13,7 @@ public class Job implements Serializable{
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -877471067429263379L;
+	private static final long serialVersionUID = 877471067429263379L;
 	private long duration;
 	private JobStatus status;
 	private long id;
@@ -76,6 +76,7 @@ public class Job implements Serializable{
 	/**
 	 * @return a string representation of this job object
 	 */
+	@Override
 	public String toString() {
 		return "Job {ID = " + id + " "+status+" }";
 	}

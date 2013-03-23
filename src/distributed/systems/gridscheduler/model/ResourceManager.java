@@ -16,6 +16,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
+import distributed.systems.core.LogManager;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
@@ -159,7 +160,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		} else {
 			jobQueue.add(job);
 			sendJobEvent(job, ControlMessageType.JobArrival);
-			writeToBinary(logfilename,job,true);
+			LogManager.writeToBinary(logfilename,job,true);
 			scheduleJobs();
 		}
 
@@ -191,7 +192,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		while ( ((waitingJob = getWaitingJob()) != null) && ((freeNode = cluster.getFreeNode()) != null) ) {
 			freeNode.startJob(waitingJob);
 			sendJobEvent(waitingJob,ControlMessageType.JobStarted);
-			writeToBinary(logfilename,waitingJob,true);
+			LogManager.writeToBinary(logfilename,waitingJob,true);
 		}
 
 	}
@@ -206,7 +207,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(job != null) : "parameter 'job' cannot be null";
 		sendJobEvent(job,ControlMessageType.JobCompleted);
 		// job finished, remove it from our pool
-		writeToBinary(logfilename,job,true);
+		LogManager.writeToBinary(logfilename,job,true);
 
 		jobQueue.remove(job);
 	}
@@ -311,11 +312,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// RM receives add Job from a GS
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
-			writeToBinary(logfilename,controlMessage.getJob(),true);
+			Job j = controlMessage.getJob();
+			LogManager.writeToBinary(logfilename,j,true);
 
-			jobQueue.add(controlMessage.getJob());
+			jobQueue.add(j);
 
-			ControlMessage msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.socketURL, this.socketPort);
+			ControlMessage msg = new ControlMessage(ControlMessageType.JobArrival, j, this.socketURL, this.socketPort);
 			
 			//Now only sends message to the GS from where the message came from.
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this);
@@ -429,61 +431,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		
 	}
 
-	public  void writeToBinary (String filename, Object obj, boolean append){
-		File file = new File (filename);
-		ObjectOutputStream out = null;
-
-		try{
-			if (!file.exists () || !append) out = new ObjectOutputStream (new FileOutputStream (filename));
-			else out = new AppendableObjectOutputStream (new FileOutputStream (filename, append));
-			out.writeObject(obj);
-			out.flush ();
-		}catch (Exception e){
-			e.printStackTrace ();
-		}finally{
-			try{
-				if (out != null) out.close ();
-			}catch (Exception e){
-				e.printStackTrace ();
-			}
-		}
-	}
-
-	public ArrayList<Job> readFromBinaryFile (String filename){
-		File file = new File (filename);
-		ArrayList<Job> recoveredLog = new ArrayList<Job>();
-		if (file.exists ()){
-			ObjectInputStream ois = null;
-			try{
-				ois = new ObjectInputStream (new FileInputStream (filename));
-				while (true){
-
-					Job j = (Job)ois.readObject ();
-					recoveredLog.add(j);
-				}
-			}catch (EOFException e){
-
-			}catch (Exception e){
-				e.printStackTrace ();
-			}finally{
-				try{
-					if (ois != null) ois.close();
-				}catch (IOException e){
-					e.printStackTrace ();
-				}
-			}
-		}
-		return recoveredLog;
-	}
-
-	private class AppendableObjectOutputStream extends ObjectOutputStream {
-		public AppendableObjectOutputStream(OutputStream out) throws IOException {
-			super(out);
-		}
-
-		@Override
-		protected void writeStreamHeader() throws IOException {}
-	}
+	
 
 	private InetSocketAddress getRandomGS() {
 		return (InetSocketAddress)gsList.keySet().toArray()[(int)(Math.random() * ((gsList.size()-1) + 1))];
