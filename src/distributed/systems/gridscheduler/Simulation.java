@@ -71,7 +71,7 @@ public class Simulation implements Runnable {
 
 		for(LogEntry e: gs1.getFullLog())
 			System.out.println(e.toString());
-		
+
 		System.out.println("Simulation Finished, printing Log... GS2");
 
 
@@ -86,15 +86,15 @@ public class Simulation implements Runnable {
 			for(Job j: cluster.getResourceManager().readFromBinaryFile(cluster.getResourceManager().getLogFileName())){
 				System.out.println(j.toString());
 			}
-		
+
 			cluster.stopPollThread();
 		}
 
 		// Stop grid scheduler
 		gs1.stopPollThread();
-		
+
 		gridSchedulerPanel.dispose();
-		
+
 		System.exit(1);
 	}
 
@@ -119,8 +119,8 @@ public class Simulation implements Runnable {
 				//Limit number of jobs
 				if (jobId == 200) {
 					boolean finished = false;
-					outerLoop: while(!finished){
-							for( int i= 0; i< nrClusters; i++){
+					while(!finished){
+outerLoop: for( int i= 0; i< nrClusters; i++){
 							if(clusters[i].getResourceManager().getWaitingJob() != null ) break outerLoop;
 							for(Node n: clusters[i].getNodes()){
 								if (n.getStatus() == NodeStatus.Busy){
@@ -129,7 +129,7 @@ public class Simulation implements Runnable {
 							}
 							finished = true;
 						}
-					
+
 					}
 					return;
 				}
