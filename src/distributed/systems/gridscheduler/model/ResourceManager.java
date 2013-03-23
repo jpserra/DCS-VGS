@@ -38,7 +38,7 @@ import distributed.systems.core.SynchronizedSocket;
  * @author Niels Brouwers, Boaz Pat-El
  *
  */
-public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler {
+public class ResourceManager implements INodeEventHandler, IMessageReceivedHandler, Runnable {
 
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
@@ -47,7 +47,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private String logfilename = "";
 	
-	private final long timeOut = 1000;
+	private final long timeOut = 1;
 
 	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
@@ -60,6 +60,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private ConcurrentHashMap<Long, Timer> jobTimers; 
 	//private ConcurrentHashMap<InetSocketAddress> gsList;
+	
+	// polling frequency, 1hz
+	private long pollSleep = 100;
+	private boolean running;
+	private Thread pollingThread;
+
 
 	/**
 	 * Constructs a new ResourceManager object.
@@ -84,21 +90,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		
 		jobTimers = new ConcurrentHashMap<Long, Timer>();
-		// Number of jobs in the queue must be larger than the number of nodes, because
-		// jobs are kept in queue until finished. The queue is a bit larger than the 
-		// number of nodes for efficiency reasons - when there are only a few more jobs than
-		// nodes we can assume a node will become available soon to handle that job.
-		//		jobQueueSize = cluster.getNodeCount() + MAX_QUEUE_SIZE;
+	
 
-		/*
-		//LocalSocket lSocket = new LocalSocket();
-		Socket lSocket = new Socket();
-		socket = new SynchronizedSocket(lSocket);
-		//socket.register(socketURL);
-
-		socket.addMessageReceivedHandler(this);
-		 */
-
+		running = true;
+		pollingThread = new Thread(this);
+		pollingThread.start();
 
 
 	}
@@ -384,7 +380,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		
 		// if jobAdd fails it will add to the jobQueue again
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
-			this.jobQueue.add(controlMessage.getJob());
+			//this.jobQueue.add(controlMessage.getJob());
+			addJob(controlMessage.getJob());//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) t.cancel();
 			System.out.println(":::::::::::::::::::::::::::::::::JOB ADDED AGAIN TO QUEUE!");
@@ -408,6 +405,38 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		//Always tries to send to send the same message again.
 		return null;
 
+	}
+	
+	
+	public void run() {
+		while (running) {
+			scheduleJobs();
+			// sleep
+			try
+			{
+				Thread.sleep(pollSleep);
+			} catch (InterruptedException ex) {
+				assert(false) : "Grid scheduler runtread was interrupted";
+			}
+			
+		}
+		
+	}
+
+	
+	/**
+	 * Stop the polling thread. This has to be called explicitly to make sure the program 
+	 * terminates cleanly.
+	 *
+	 */
+	public void stopPollThread() {
+		running = false;
+		try {
+			pollingThread.join();
+		} catch (InterruptedException ex) {
+			assert(false) : "Grid scheduler stopPollThread was interrupted";
+		}
+		
 	}
 
 	public  void writeToBinary (String filename, Object obj, boolean append){
