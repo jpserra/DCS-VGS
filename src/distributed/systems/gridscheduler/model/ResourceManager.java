@@ -19,6 +19,7 @@ import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
+import distributed.systems.core.VectorialClock;
 
 /**
  * This class represents a resource manager in the VGS. It is a component of a cluster, 
@@ -42,6 +43,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private Queue<Job> jobQueue;
 	private String socketURL;
 	private int socketPort;
+	
+	private int identifier;
+	private int nEntities;
+	private VectorialClock vClock;
+
 
 	private String logfilename = "";
 	
@@ -74,7 +80,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * </DL>
 	 * @param cluster the cluster to wich this resource manager belongs.
 	 */
-	public ResourceManager(Cluster cluster)	{
+	public ResourceManager(int id, int nEntities, Cluster cluster)	{
 		// preconditions
 		assert(cluster != null);
 
@@ -82,7 +88,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.cluster = cluster;
 		this.socketURL = cluster.getName();
 		this.socketPort = cluster.getPort();
-
+		this.identifier = id;
+		this.nEntities = nEntities;
+		vClock = new VectorialClock(nEntities);
 		logfilename += socketURL+":"+socketPort+".log";
 		
 		File file = new File (logfilename);
@@ -314,14 +322,21 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			writeToBinary(logfilename,controlMessage.getJob(),true);
 
 			jobQueue.add(controlMessage.getJob());
-
-			ControlMessage msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.socketURL, this.socketPort);
+			
+			vClock.updateClock(controlMessage.getClock(), identifier);
 			
 			//Now only sends message to the GS from where the message came from.
+			ControlMessage msg;
+			synchronized (this) {
+				vClock.incrementClock(identifier);
+				msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.socketURL, this.socketPort);
+				msg.setClock(vClock.getClock());
+			}
+			
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this);
 			syncClientSocket.sendMessage();
-
 			scheduleJobs();
+
 
 			return null;
 
@@ -408,9 +423,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			} catch (InterruptedException ex) {
 				assert(false) : "Grid scheduler runtread was interrupted";
 			}
-			
 		}
-		
 	}
 
 	
@@ -489,8 +502,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		return (InetSocketAddress)gsList.keySet().toArray()[(int)(Math.random() * ((gsList.size()-1) + 1))];
 	}
 	
-	private void sendJobEvent(Job job, ControlMessageType messageType) {
+	private synchronized void sendJobEvent(Job job, ControlMessageType messageType) {
 		ControlMessage msg = new ControlMessage(messageType, job, this.socketURL, this.socketPort);
+		vClock.incrementClock(this.identifier);
+		msg.setClock(vClock.getClock());
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this);
 		syncClientSocket.sendMessage();
 	}

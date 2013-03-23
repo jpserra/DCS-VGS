@@ -28,9 +28,7 @@ public class ControlMessage extends Message {
 	private Job job;
 	private int load;
 	private Set<InetSocketAddress> gridSchedulersList;
-	
-	//TODO 
-	//private int[] clock;
+	private int[] clock;
 
 	/**
 	 * Constructs a new ControlMessage object
@@ -151,5 +149,13 @@ public class ControlMessage extends Message {
 
 	public void setLogEntry(LogEntry logEntry) {
 		this.logEntry = logEntry;
+	}
+
+	public int[] getClock() {
+		return clock;
+	}
+
+	public void setClock(int[] clock) {
+		this.clock = clock;
 	}
 }
