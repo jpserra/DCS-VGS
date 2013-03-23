@@ -119,8 +119,8 @@ public class Simulation implements Runnable {
 				//Limit number of jobs
 				if (jobId == 200) {
 					boolean finished = false;
-					while(!finished){
-						outerLoop:	for( int i= 0; i< nrClusters; i++){
+					outerLoop: while(!finished){
+							for( int i= 0; i< nrClusters; i++){
 							if(clusters[i].getResourceManager().getWaitingJob() != null ) break outerLoop;
 							for(Node n: clusters[i].getNodes()){
 								if (n.getStatus() == NodeStatus.Busy){
