@@ -1,5 +1,6 @@
 package distributed.systems.gridscheduler.model;
 
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
+import distributed.systems.core.LogManager;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
@@ -26,6 +28,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	//General Log containing every happening
 	private ArrayList<LogEntry> log;
 	private LogEntry logEntry;
+	private String logfilename = "";
 
 	// job queue
 	private ConcurrentLinkedQueue<Job> jobQueue;
@@ -87,6 +90,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		initilizeGridScheduler(id, nEntities, url, port);
 
+		//delete older log files on new executions
+		File file = new File (logfilename);
+		file.delete();
+		
 		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList, url, port);
 
 		SynchronizedClientSocket syncClientSocket;
@@ -106,6 +113,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.port = port;
 		identifier = id;
 		this.nEntities = nEntities;
+		this.logfilename += "GS " + id +".log";
 
 		gridSchedulersList = new HashSet<InetSocketAddress>();
 		gridSchedulersList.add(new InetSocketAddress(url, port));
@@ -211,7 +219,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		// resource manager wants to offload a job to us 
-		if (controlMessage.getType() == ControlMessageType.AddJob) {			
+		if (controlMessage.getType() == ControlMessageType.AddJob) {
+			//TODO aqui precisa de log?
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			jobQueue.add(controlMessage.getJob());
 			//Syncing
@@ -225,7 +234,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			tempVC = vClock;
 
 			//TODO Logar accao...
-			
+			LogManager.writeToBinary(logfilename,controlMessage,true);
+
 			synchronizeWIthAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, url, port));
 	
 			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
@@ -246,6 +256,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival) {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			//TODO Fazer log...
+			LogManager.writeToBinary(logfilename,controlMessage,true);
+
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.GSLogJobArrivalAck, url, port));
 		}
 
@@ -253,6 +265,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			tempVC = vClock;
 			//TODO Logar accao...
+			LogManager.writeToBinary(logfilename,controlMessage,true);
+
 			synchronizeWIthAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, url, port));
 			msg = new ControlMessage(ControlMessageType.JobStartedAck, url, port);
 			msg.setClock(tempVC.getClock());
@@ -261,7 +275,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		if (controlMessage.getType() == ControlMessageType.GSLogJobStarted) {				
 			vClock.updateClock(controlMessage.getClock(), identifier);
+
 			//TODO Fazer log...
+			LogManager.writeToBinary(logfilename,controlMessage,true);
+
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.GSLogJobStartedAck, url, port));
 		}
 
@@ -269,6 +286,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			tempVC = vClock;
 			//TODO Logar accao...
+			LogManager.writeToBinary(logfilename,controlMessage,true);
+
 			synchronizeWIthAllGS(new ControlMessage(ControlMessageType.GSLogJobCompleted, url, port));
 			msg = new ControlMessage(ControlMessageType.JobCompletedAck, url, port);
 			msg.setClock(tempVC.getClock());
@@ -278,6 +297,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.GSLogJobCompleted) {				
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			//TODO Fazer log...
+			LogManager.writeToBinary(logfilename,controlMessage,true);
+
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.GSLogJobCompletedAck, url, port));
 		}
 
