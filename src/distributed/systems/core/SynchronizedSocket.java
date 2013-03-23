@@ -3,12 +3,9 @@ package distributed.systems.core;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-
 import distributed.systems.gridscheduler.model.ControlMessage;
-import distributed.systems.gridscheduler.model.ControlMessageType;
 
 public class SynchronizedSocket extends Thread {
 

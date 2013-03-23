@@ -11,7 +11,6 @@ import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
 import distributed.systems.core.SynchronizedSocket;
-//import distributed.systems.example.LocalSocket;
 
 /**
  * 

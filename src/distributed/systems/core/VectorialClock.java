@@ -9,6 +9,10 @@ import java.io.Serializable;
 public class VectorialClock implements Serializable {
 
     /**
+	 * 
+	 */
+	private static final long serialVersionUID = -4298646294358826625L;
+		/**
      * Relógio Vectorial.
      */
     private int[] clock;

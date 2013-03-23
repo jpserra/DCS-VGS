@@ -30,7 +30,7 @@ public class ControlMessage extends Message {
 	private Set<InetSocketAddress> gridSchedulersList;
 	
 	//TODO 
-	private int[] clock;
+	//private int[] clock;
 
 	/**
 	 * Constructs a new ControlMessage object
