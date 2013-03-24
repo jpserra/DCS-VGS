@@ -15,6 +15,7 @@ public class LogEntry implements Serializable {
 	private Long id; //Generic id can be JobId, ClusterId and GSId
 	private String event; 
 	private int[] clock;
+	private int test;
 	
 	public LogEntry(ControlMessage M){
 
