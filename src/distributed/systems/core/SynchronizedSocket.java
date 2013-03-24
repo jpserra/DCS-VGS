@@ -11,20 +11,14 @@ public class SynchronizedSocket extends Thread {
 
 	private ServerSocket serverSocket;
 	private IMessageReceivedHandler handler;
-	private String localUrl;
-	private int localPort;
 
-	public SynchronizedSocket(String localUrl, int localPort) {
-		this.localUrl = localUrl;
-		this.localPort = localPort;
+	public SynchronizedSocket(String hostname, int port) {
 		try {
-			serverSocket = new ServerSocket(localPort);
+			serverSocket = new ServerSocket(port);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-
-	
 
 	public class ConnectionHandler extends Thread {
 		private Socket s;
@@ -79,19 +73,5 @@ public class SynchronizedSocket extends Thread {
 		Thread t = new Thread( this);
 		t.start();
 	}
-	
-	/*
-	public void sendMessage(ControlMessage cMessage, InetSocketAddress address) {
-		try {
-			Socket socket = new Socket(address.getAddress(), address.getPort());
-			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-			out.writeObject(cMessage);
-			out.close();
-			
-			socket.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}*/
 	
 }

@@ -123,6 +123,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.logfilename += "GS_" + id +".log";
 		
 		// TODO Como é que se vai fazer quanto aos Restart's?
+		// Colocar uma flag para indicar se se trata de um restart ou não?
 		//delete older log files
 		File file = new File (logfilename);
 		file.delete();
@@ -268,6 +269,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival) {
 			vClock.updateClock(controlMessage.getClock(), identifier);
+			
 			//TODO Fazer log...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -277,6 +279,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.JobStarted) {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			tempVC = vClock;
+			
 			//TODO Logar accao...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -298,6 +301,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			tempVC = vClock;
+			
 			//TODO Logar accao...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -308,7 +312,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.GSLogJobCompleted) {				
+			
 			vClock.updateClock(controlMessage.getClock(), identifier);
+			
 			//TODO Fazer log...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -347,7 +353,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		ControlMessage controlMessage = (ControlMessage)message;
 
-		//TODO What is this doing?
+		//TODO O RM vai ser removido para sempre... Solução?
 		if (controlMessage.getType() == ControlMessageType.AddJob) {	
 			resourceManagerLoad.remove(address);
 			jobQueue.add(controlMessage.getJob());

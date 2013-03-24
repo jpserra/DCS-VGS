@@ -2,21 +2,13 @@ package distributed.systems.core;
 
 import java.io.Serializable;
 
-import com.sun.swing.internal.plaf.synth.resources.synth;
-
 /**
- * Tipo de dados que implementa um regio vectorial.
- * @author mX
+ * Class that represents a Vectorial Clock
  */
 public class VectorialClock implements Serializable {
 
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = -4298646294358826625L;
-		/**
-     * Relgio Vectorial.
-     */
+
     private int[] clock;
 
     public VectorialClock(int nEntities) {
@@ -27,7 +19,7 @@ public class VectorialClock implements Serializable {
     }
 
     /**
-     * 
+     * Returns the clock.
      * @return clock
      */
     public int[] getClock() {
@@ -35,7 +27,7 @@ public class VectorialClock implements Serializable {
     }
 
     /**
-     * Increment
+     * Increment the clock at a specified ID by one unit
      * @param id 
      */
     public synchronized void incrementClock(int id) {
@@ -43,7 +35,7 @@ public class VectorialClock implements Serializable {
     }
 
     /**
-     * Faz o update do clock comparando-o com o externalClock dado.
+     * Updates the clock using an external clock as reference.
      * @param externalClock
      * @param id 
      */
@@ -53,8 +45,6 @@ public class VectorialClock implements Serializable {
                 clock[i] = externalClock[i];
             }
         }
-
     }
     
-   
 }

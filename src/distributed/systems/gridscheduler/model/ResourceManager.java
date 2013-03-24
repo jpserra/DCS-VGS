@@ -44,7 +44,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private String logfilename = "";
 
 	// timeout to recieve an Ack message
-	private final long timeOut = 2000;
+	private final long timeOut = 1000;
 
 	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
@@ -113,7 +113,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
 			System.out.println("TIME OUT!");
 			handler.onExceptionThrown(message, destinationAddress);
 		}
@@ -267,7 +266,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		ControlMessage controlMessage = (ControlMessage)message;
 
-		//TODO Tirar o IF se for para ver os prints todos...
 		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
 			System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
 		}
