@@ -17,15 +17,11 @@ public class LogEntry implements Serializable {
 	private int[] clock;
 	
 	public LogEntry(ControlMessage M){
-
 		this.setOrigin(M.getInetAddress());
 		this.setEvent(M.getType().toString());
-
 		if(M.getJob() != null)
 			this.setId(M.getJob().getId());
 		this.setClock(clock);
-
-
 	}
 
 	public Long getId() {

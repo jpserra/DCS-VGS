@@ -129,7 +129,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
 		
-		
+		// Thread that checks if the simulation is over
 		new Thread(new Runnable() {
 			public void run() {
 				//TODO Check if the simulation is over using the number of jobs variable.
@@ -527,6 +527,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			System.out.println(usage);
 			System.exit(1);
 		}
+		
 	}
 
 }
