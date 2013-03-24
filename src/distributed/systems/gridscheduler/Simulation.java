@@ -20,12 +20,20 @@ import distributed.systems.gridscheduler.model.NodeStatus;
  * @author Niels Brouwers, Boaz Pat-El
  */
 public class Simulation implements Runnable {
-	// Number of clusters in the simulation
-	private final static int nrClusters = 5;
-	private final static int nrGS= 2;
+	// Number of Clusters in the simulation
+	private final static int nClusters = 5;
+
+	// Number of GS's in the simulation
+	private final static int nGS = 2;
+
+	// Starting local port where GS's and Clusters should listen for incoming messages
+	private final static int startingPort = 50000;
 
 	// Number of nodes per cluster in the simulation
-	private final static int nrNodes = 50;
+	private final static int nNodes = 50;
+
+	// Number of jobs to run in a cluster.
+	private final static int nJobs = 100;
 
 	// Simulation components
 	Cluster clusters[];
@@ -40,22 +48,20 @@ public class Simulation implements Runnable {
 
 		GridScheduler gs1, gs2;
 
-		int nEntities = nrClusters + nrGS;
+		int nEntities = nClusters + nGS;
 		// Setup the model. Create a grid scheduler and a set of clusters.
-		gs1 = new GridScheduler( 0, nEntities,"localhost", 50000);
-		gs2 = new GridScheduler( 1, nEntities, "localhost", 50001, "localhost", 50000);
+		gs1 = new GridScheduler( 0, nEntities, 1, "localhost", startingPort);
+		gs2 = new GridScheduler( 1, nEntities, 1, "localhost", startingPort+1, "localhost", 50000);
 
 		// Create a new gridscheduler panel so we can monitor our components
 		gridSchedulerPanel = new GridSchedulerPanel(gs1,gs2);
 		gridSchedulerPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		
 		// Create the clusters and nods
 		System.out.println("Init Clusters");
-		clusters = new Cluster[nrClusters];
-		for (int i = 0; i < nrClusters; i++) {
-			clusters[i] = new Cluster(i+2, nEntities, "localhost", 50050 + i, gs1.getUrl(), gs1.getPort(), nrNodes); 
-
+		clusters = new Cluster[nClusters];
+		for (int i = 0; i < nClusters; i++) {
+			clusters[i] = new Cluster(i+nGS, nEntities, nNodes, nJobs, "localhost", startingPort+nGS+i, gs1.getHostname(), gs1.getPort());  
 			// Now create a cluster status panel for each cluster inside this gridscheduler
 			ClusterStatusPanel clusterReporter = new ClusterStatusPanel(clusters[i]);
 			gridSchedulerPanel.addStatusPanel(clusterReporter);
@@ -68,16 +74,13 @@ public class Simulation implements Runnable {
 		Thread runThread = new Thread(this);
 		runThread.run(); // This method only returns after the simulation has ended
 
-
 		//Print log
 		System.out.println("Simulation Finished, printing Log... GS1");
-
 
 		for(LogEntry e: gs1.getFullLog())
 			System.out.println(e.toString());
 
 		System.out.println("Simulation Finished, printing Log... GS2");
-
 
 		for(LogEntry e: gs2.getFullLog())
 			System.out.println(e.toString());
@@ -90,7 +93,6 @@ public class Simulation implements Runnable {
 			for(Object j: LogManager.readFromBinaryFile(cluster.getResourceManager().getLogFileName())){
 				System.out.println(j.toString());
 			}
-
 			cluster.stopPollThread();
 		}
 
@@ -114,7 +116,7 @@ public class Simulation implements Runnable {
 		while (gridSchedulerPanel.isVisible()) {
 			// Add a new job to the system that take up random time
 			Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
-			cId = (int)(Math.random() * (nrClusters));
+			cId = (int)(Math.random() * (nClusters));
 			clusters[0].getResourceManager().addJob(job);
 
 			try {
@@ -124,7 +126,7 @@ public class Simulation implements Runnable {
 				if (jobId == 200) {
 					boolean finished = false;
 					while(!finished){
-outerLoop: for( int i= 0; i< nrClusters; i++){
+						outerLoop: for( int i= 0; i< nClusters; i++){
 							if(clusters[i].getResourceManager().getWaitingJob() != null ) break outerLoop;
 							for(Node n: clusters[i].getNodes()){
 								if (n.getStatus() == NodeStatus.Busy){

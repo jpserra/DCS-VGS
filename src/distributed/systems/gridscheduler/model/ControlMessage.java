@@ -123,7 +123,7 @@ public class ControlMessage extends Message {
 	/**
 	 * @param url the url to set
 	 */
-	public void setUrl(String url) {
+	public void setHostname(String url) {
 		this.url = url;
 	}
 
