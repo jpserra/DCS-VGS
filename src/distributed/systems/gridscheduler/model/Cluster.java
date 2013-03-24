@@ -18,6 +18,7 @@ public class Cluster implements Runnable {
 	private String url;
 	private int port;
 	private int id;
+	private int nJobsToExecute;
 	
 	// polling frequency, 10hz
 	private long pollSleep = 100;
@@ -38,7 +39,7 @@ public class Cluster implements Runnable {
 	 * @param name the name of this cluster
 	 * @param nrNodes the number of nodes in this cluster
 	 */
-	public Cluster(int id, int nEntities, String clusterUrl, int clusterPort, String gridSchedulerURL, int gridSchedulerPort, int nodeCount) {
+	public Cluster(int id, int nEntities, int nodeCount, int nJobsToExecute, String clusterUrl, int clusterPort, String gridSchedulerURL, int gridSchedulerPort) {
 		// Preconditions
 		assert(clusterUrl != null) : "parameter 'clusterUrl' cannot be null";
 		assert(gridSchedulerURL != null) : "parameter 'gridSchedulerURL' cannot be null";
@@ -48,6 +49,7 @@ public class Cluster implements Runnable {
 		this.id = id;
 		this.url = clusterUrl;
 		this.port = clusterPort;
+		this.nJobsToExecute = nJobsToExecute;
 
 		nodes = new ArrayList<Node>(nodeCount);
 		
@@ -160,6 +162,32 @@ public class Cluster implements Runnable {
 
 	public int getID() {
 		return id;
+	}
+	
+	public static void main(String[] args) {
+
+		String usage = "Usage: Cluster <id> <nEntities> <nNodes> <nJobsToExecute> <hostname> <port> <GSHostname> <GSPort>";
+
+		if(args.length != 7) {
+			System.out.println(usage);
+			System.exit(1);
+		}
+
+		try {
+			new Cluster(
+					Integer.parseInt(args[0]), 
+					Integer.parseInt(args[1]),
+					Integer.parseInt(args[2]),
+					Integer.parseInt(args[3]),
+					args[4], 
+					Integer.parseInt(args[5]), 
+					args[6], 
+					Integer.parseInt(args[7]));
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println(usage);
+			System.exit(1);
+		}
 	}
 	
 }

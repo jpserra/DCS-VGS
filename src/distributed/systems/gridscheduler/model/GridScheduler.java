@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.LogManager;
@@ -35,6 +36,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	private int identifier;
 	private int nEntities;
+	private int nJobs;
 	private VectorialClock vClock;
 
 	// local url
@@ -65,21 +67,21 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * </DL>
 	 * @param url the gridscheduler's url to register at
 	 */
-	public GridScheduler(int id, int nEntities, String url, int port) {
+	public GridScheduler(int id, int nEntities, int nJobs, String url, int port) {
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
 		assert(port > 0) : "parameter 'port'";
 		assert(id >= 0);
 		assert(nEntities > 0);
 
-		initilizeGridScheduler(id, nEntities, url, port);
+		initilizeGridScheduler(id, nEntities, nJobs, url, port);
 
 		running = true;
 		pollingThread = new Thread(this);
 		pollingThread.start();
 	}
 
-	public GridScheduler(int id, int nEntities, String url, int port, String otherGSUrl, int otherGSPort) {
+	public GridScheduler(int id, int nEntities, int nJobs, String url, int port, String otherGSUrl, int otherGSPort) {
 		// preconditions
 		assert(url != null) : "parameter 'url' cannot be null";
 		assert(port > 0) : "parameter 'port'";
@@ -88,12 +90,12 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		assert(id >= 0);
 		assert(nEntities > 0);
 
-		initilizeGridScheduler(id, nEntities, url, port);
+		initilizeGridScheduler(id, nEntities, nJobs, url, port);
 
 		//delete older log files on new executions
 		File file = new File (logfilename);
 		file.delete();
-		
+
 		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList, url, port);
 
 		SynchronizedClientSocket syncClientSocket;
@@ -107,11 +109,12 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	}
 
-	private void initilizeGridScheduler(int id, int nEntities,String url, int port){
+	private void initilizeGridScheduler(int id, int nEntities, int nJobs, String url, int port){
 		// init members
 		this.url = url;
 		this.port = port;
-		identifier = id;
+		this.identifier = id;
+		this.nJobs = nJobs;
 		this.nEntities = nEntities;
 		this.logfilename += "GS " + id +".log";
 
@@ -125,6 +128,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		syncSocket = new SynchronizedSocket(url, port);
 		syncSocket.addMessageReceivedHandler(this);
+		
+		
+		new Thread(new Runnable() {
+			public void run() {
+				//TODO Check if the simulation is over using the number of jobs variable.
+			}
+		}).start();
+
 
 	}
 
@@ -226,8 +237,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			//Syncing
 		}
 
-
-
 		if (controlMessage.getType() == ControlMessageType.JobArrival) {			
 
 			vClock.updateClock(controlMessage.getClock(), identifier);
@@ -237,7 +246,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
 			synchronizeWIthAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, url, port));
-	
+
 			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
 				// Prepare a different message but mantain the clock.
 				synchronized(this) {
@@ -319,7 +328,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		return null;
-		
+
 	}
 
 
@@ -344,7 +353,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		return null;
 
 	}
-
 
 	// finds the least loaded resource manager and returns its url
 	private InetSocketAddress getLeastLoadedRM() {
@@ -433,7 +441,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		} catch (InterruptedException ex) {
 			assert(false) : "Grid scheduler stopPollThread was interrupted";
 		}
-
 	}
 
 	//Method called when a message arrives
@@ -469,22 +476,57 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		msg.setClock(vClock.getClock());
 		return msg;
 	}
-	
+
 	private void synchronizeWIthAllGS(ControlMessage messageToSend) {
-		
+
 		SyncLog syncLog = new SyncLog();
 		SynchronizedClientSocket syncClientSocket;
-		
+
 		ControlMessage msg = prepareMessageToSend(messageToSend);
-		
+
 		for(InetSocketAddress address : gridSchedulersList) {
 			if (address.getHostString() == this.getUrl() && address.getPort() == this.getPort()) continue;
 			syncClientSocket = new SynchronizedClientSocket(msg, address, this);
 			syncClientSocket.sendLogMessage(syncLog);
 		}
-		
+
 		if(gridSchedulersList.size() > 1) 
 			syncLog.check(); //Assume that it always gets a response from at least one of the GS	
+	}
+
+	public static void main(String[] args) {
+
+		String usage = "Usage: GridScheduler <id> <nEntities> <nJobs> <hostname> <port> [<otherGSHostname> <otherGSPort>]";
+
+		if(args.length != 5 && args.length != 7) {
+			System.out.println(usage);
+			System.exit(1);
+		}
+
+		try {
+			if(args.length == 5) {
+				new GridScheduler(
+						Integer.parseInt(args[0]), 
+						Integer.parseInt(args[1]),
+						Integer.parseInt(args[2]),
+						args[3], 
+						Integer.parseInt(args[4]));
+			}
+			else if (args.length == 7) {
+				new GridScheduler(
+						Integer.parseInt(args[0]), 
+						Integer.parseInt(args[1]),
+						Integer.parseInt(args[2]),
+						args[3], 
+						Integer.parseInt(args[4]),
+						args[5], 
+						Integer.parseInt(args[6]));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.out.println(usage);
+			System.exit(1);
+		}
 	}
 
 }

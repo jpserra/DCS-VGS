@@ -451,5 +451,5 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this);
 		syncClientSocket.sendMessage();
 	}
-
+	
 }
