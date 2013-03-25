@@ -47,6 +47,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private  String hostname;
 	// local port
 	private  int port;
+	
+	// timeout to recieve an ACK (response) message
+	private final int timeout = 1000;
 
 	private Set<InetSocketAddress> gridSchedulersList;
 
@@ -104,7 +107,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		//send the message querying the other GS
 		SynchronizedClientSocket syncClientSocket;
-		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this);
+		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this, timeout);
 		syncClientSocket.sendMessage();
 
 		running = true;
@@ -228,7 +231,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 			for(InetSocketAddress address : gridSchedulersListTemp) {
 				if (address.getPort() == this.getPort()) continue;
-				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 				syncClientSocket.sendMessageWithoutResponse();
 			}			
 			return msg;
@@ -258,7 +261,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					msg = new ControlMessage(ControlMessageType.AddJobAck, controlMessage.getJob(), hostname, port);
 					msg.setClock(tempVC.getClock());
 				}
-				syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getJob().getOriginalRM(), this);
+				syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getJob().getOriginalRM(), this, timeout);
 				syncClientSocket.sendMessageWithoutResponse();			
 			}
 
@@ -396,7 +399,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				cMessage.setPort(this.getPort());
 
 				//syncSocket.sendMessage(cMessage, inetAdd);
-				SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, inetAdd, this);
+				SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, inetAdd, this, timeout);
 				syncClientSocket.sendMessage();
 
 			}
@@ -415,7 +418,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						cMessage.setClock(vClock.getClock());
 					}
 
-					SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this);
+					SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this, timeout);
 					jobQueue.remove(job);
 					syncClientSocket.sendMessageWithoutResponse();
 
@@ -468,7 +471,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			for(InetSocketAddress address : gridSchedulersList) {
 				if (address.getHostName() == this.getHostname() && address.getPort() == this.getPort()) continue; //Doe
 				System.out.println("Sending logEntry from: "+ this.hostname +":"+ this.port +"to:" + address.toString());
-				syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 				syncClientSocket.sendMessage();
 			}		
 		}	
@@ -496,7 +499,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		for(InetSocketAddress address : gridSchedulersList) {
 			if (address.getHostString() == this.getHostname() && address.getPort() == this.getPort()) continue;
-			syncClientSocket = new SynchronizedClientSocket(msg, address, this);
+			syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 			syncClientSocket.sendLogMessage(syncLog);
 		}
 
