@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.LogManager;
@@ -34,20 +35,20 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private ConcurrentLinkedQueue<Job> jobQueue;
 
 	private int identifier;
-	
+
 	// (max) number of entities (GS and RM/Clusters) present in the simulation
 	private int nEntities;
-	
+
 	// number of jobs to be executed in the simulation
 	private int nJobs;
-	
+
 	private VectorialClock vClock;
 
 	// local hostname
 	private  String hostname;
 	// local port
 	private  int port;
-	
+
 	// timeout to recieve an ACK (response) message
 	private final int timeout = 1000;
 
@@ -117,14 +118,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	}
 
 	private void initilizeGridScheduler(int id, int nEntities, int nJobs, String hostname, int port){
-		
+
 		this.hostname = hostname;
 		this.port = port;
 		this.identifier = id;
 		this.nJobs = nJobs;
 		this.nEntities = nEntities;
 		this.logfilename += "GS_" + id +".log";
-		
+
 		// TODO Como é que se vai fazer quanto aos Restart's?
 		// Colocar uma flag para indicar se se trata de um restart ou não?
 		//delete older log files
@@ -272,7 +273,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival) {
 			vClock.updateClock(controlMessage.getClock(), identifier);
-			
+
 			//TODO Fazer log...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -282,7 +283,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.JobStarted) {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			tempVC = vClock;
-			
+
 			//TODO Logar accao...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -304,7 +305,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			tempVC = vClock;
-			
+
 			//TODO Logar accao...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -315,9 +316,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.GSLogJobCompleted) {				
-			
+
 			vClock.updateClock(controlMessage.getClock(), identifier);
-			
+
 			//TODO Fazer log...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
@@ -506,9 +507,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		//Assume that it always gets a response from at least one of the GS
 		if(gridSchedulersList.size() > 1) 
 			syncLog.check();
-		
+
 	}
-	
+
 	public static void main(String[] args) {
 
 		String usage = "Usage: GridScheduler <id> <nEntities> <nJobs> <hostname> <port> [<otherGSHostname> <otherGSPort>]";

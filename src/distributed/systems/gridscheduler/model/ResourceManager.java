@@ -7,6 +7,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogManager;
 import distributed.systems.core.Message;
@@ -34,9 +35,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
+
 	private String socketHostname;
 	private int socketPort;
-
 	private int identifier;
 	private int nEntities;
 	private VectorialClock vClock;
@@ -46,17 +47,16 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	// timeout to recieve an ACK (response) message
 	private final int timeout = 1000;
 
-	//	private int jobQueueSize;
 	public static final int MAX_QUEUE_SIZE = 10; 
 
-	// Scheduler url
+	// hostname and port (address) of the Grid Scheduler that this RM is supposed to use to connect in the first place.
 	private String gridSchedulerHostname = null;
 	private int gridSchedulerPort;
 
-	private ConcurrentHashMap<InetSocketAddress, Integer> gsList; //Gs lists addresses and number of failures
+	//GG list with addresses and number of failures for each one
+	private ConcurrentHashMap<InetSocketAddress, Integer> gsList;
 
 	private ConcurrentHashMap<Long, Timer> jobTimers; 
-	//private ConcurrentHashMap<InetSocketAddress> gsList;
 
 	// polling frequency, 1hz
 	private long pollSleep = 100;
