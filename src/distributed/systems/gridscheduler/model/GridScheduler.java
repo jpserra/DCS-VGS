@@ -260,6 +260,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// there is no need to log because the RM is waiting for an ACK.
 		// The ACK message will only be sent when the Job is delegated to another RM.
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
+			// Tries to add the RM to the list if this was not there already.
+			if(!resourceManagerLoad.containsKey(controlMessage.getInetAddress())) {
+					resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
+			}
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			jobQueue.add(controlMessage.getJob());
 		}
@@ -539,7 +543,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	public static void main(String[] args) {
 
-		String usage = "Usage: GridScheduler <id> <nEntities> <nJobs> <hostname> <port> [<otherGSHostname> <otherGSPort>]";
+		String usage = "Usage: GridScheduler <id> <nEntities> <nJobs> <hostname> <port> [<otherGSHostname> <otherGSPort>] [-r]";
 
 		if(args.length != 5 && args.length != 7) {
 			System.out.println(usage);
