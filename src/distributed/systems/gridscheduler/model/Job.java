@@ -19,7 +19,6 @@ public class Job implements Serializable{
 	private long id;
 	private InetSocketAddress originalRM;
 
-
 	/**
 	 * Constructs a new Job object with a certain duration and id. The id has to be unique
 	 * within the distributed system to avoid collisions.

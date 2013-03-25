@@ -30,18 +30,21 @@ public class SynchronizedSocket extends Thread {
 		}
 		
 		public void run() {
+			
 			ObjectOutputStream out;
 			ObjectInputStream in;
+			
 			try {
+				
 				out = new ObjectOutputStream(s.getOutputStream());
 				in = new ObjectInputStream(s.getInputStream());
-
+				
 				ControlMessage msg = (ControlMessage)in.readObject();
 				ControlMessage replyMsg = handler.onMessageReceived(msg);
+				
 				if(replyMsg != null) {
 					out.writeObject(replyMsg);
 					out.flush();
-
 				}
 				
 				out.close();
@@ -49,7 +52,7 @@ public class SynchronizedSocket extends Thread {
 				s.close();
 
 			} catch (IOException | ClassNotFoundException e) {
-				// TODO Auto-generated catch block
+				// TODO Fazer alguma coisa aqui? O envio pode falhar...
 				e.printStackTrace();
 			}	
 		}

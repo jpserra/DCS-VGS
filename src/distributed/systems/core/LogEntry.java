@@ -7,20 +7,17 @@ import distributed.systems.gridscheduler.model.*;
 
 public class LogEntry implements Serializable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = -8054991011970570003L;
 	private InetSocketAddress origin;
-	private Long id; //Generic id can be JobId, ClusterId and GSId
+	private Long id; //Generic id can be JobID, ClusterID and GSID
 	private String event; 
 	private int[] clock;
-	
-	public LogEntry(ControlMessage M){
-		this.setOrigin(M.getInetAddress());
-		this.setEvent(M.getType().toString());
-		if(M.getJob() != null)
-			this.setId(M.getJob().getId());
+
+	public LogEntry(ControlMessage message){
+		this.setOrigin(message.getInetAddress());
+		this.setEvent(message.getType().toString());
+		if(message.getJob() != null)
+			this.setId(message.getJob().getId());
 		this.setClock(clock);
 	}
 
@@ -56,27 +53,26 @@ public class LogEntry implements Serializable {
 		this.origin = origin;
 	}
 
-	
 	@Override
- public String toString(){
-	 String s = "[";
-	 
-	 if(origin != null)
-		 s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
-	 
+	public String toString(){
+		String s = "[";
+
+		if(origin != null)
+			s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
+
 		if(id != null)
 			s += "ID: " + id + " | ";
-		
+
 		if(event != null)
 			s += "Event: " + event + " | "; 
-		
+
 		if(clock != null)
 			s += "VecClock: " + clock ;
-		
+
 		s+= "]";
 		return s;
-	 
- }
+
+	}
 
 }
 

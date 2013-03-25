@@ -15,7 +15,7 @@ public class Cluster implements Runnable {
 
 	private List <Node> nodes;
 	private ResourceManager resourceManager;
-	private String url;
+	private String hostname;
 	private int port;
 	private int id;
 	private int nJobsToExecute;
@@ -33,36 +33,38 @@ public class Cluster implements Runnable {
 	 * <DL>
 	 * <DT><B>Preconditions:</B> 
 	 * <DD>parameter <CODE>name</CODE> cannot be null<br>
-	 * <DD>parameter <CODE>gridSchedulerURL</CODE> cannot be null<br>
+	 * <DD>parameter <CODE>gridSchedulerHostname</CODE> cannot be null<br>
+	 * <DD>parameter <CODE>gridSchedulerPort</CODE> cannot be inferior or equal to 0<br>
 	 * <DD>parameter <CODE>nrNodes</code> must be greater than 0
 	 * </DL>
 	 * @param name the name of this cluster
 	 * @param nrNodes the number of nodes in this cluster
 	 */
 	public Cluster(int id, int nEntities, int nodeCount, int nJobsToExecute, 
-			String clusterUrl, int clusterPort, String gridSchedulerURL, 
+			String hostname, int port, String gridSchedulerHostname, 
 			int gridSchedulerPort) {
 		// Preconditions
-		assert(clusterUrl != null) : "parameter 'clusterUrl' cannot be null";
-		assert(gridSchedulerURL != null) : "parameter 'gridSchedulerURL' cannot be null";
+		assert(hostname != null) : "parameter 'hostname' cannot be null";
+		assert(port > 0) : "parameter 'port' cannot be inferior or equal to 0";
+		assert(gridSchedulerHostname != null) : "parameter 'gridSchedulerHostname' cannot be null";
+		assert(gridSchedulerPort > 0) : "parameter 'gridSchedulerPort' cannot be inferior or equal to 0";
 		assert(nodeCount > 0) : "parameter 'nodeCount' cannot be smaller or equal to zero";
 
 		// Initialize members
 		this.id = id;
-		this.url = clusterUrl;
-		this.port = clusterPort;
+		this.hostname = hostname;
+		this.port = port;
 		this.nJobsToExecute = nJobsToExecute;
 
-		nodes = new ArrayList<Node>(nodeCount);
+		this.nodes = new ArrayList<Node>(nodeCount);
 
 		// Initialize the resource manager for this cluster
 		resourceManager = new ResourceManager(id, nEntities,this);
-		resourceManager.connectToGridScheduler(gridSchedulerURL,gridSchedulerPort);
+		resourceManager.connectToGridScheduler(gridSchedulerHostname,gridSchedulerPort);
 
 		// Initialize the nodes 
 		for (int i = 0; i < nodeCount; i++) {
 			Node n = new Node();
-
 			// Make nodes report their status to the resource manager
 			n.addNodeEventHandler(resourceManager);
 			nodes.add(n);
@@ -92,11 +94,27 @@ public class Cluster implements Runnable {
 	}
 
 	/**
-	 * Returns the url of the cluster
-	 * @return the url of the cluster
+	 * Returns the ID of the cluster
+	 * @return the ID of the cluster
+	 */
+	public int getID() {
+		return id;
+	}
+	
+	/**
+	 * Returns the hostname of the cluster
+	 * @return the hostname of the cluster
 	 */
 	public String getName() {
-		return url;
+		return hostname;
+	}
+	
+	/**
+	 * Returns the port of the cluster
+	 * @return the port of the cluster
+	 */
+	public int getPort() {
+		return this.port;
 	}
 
 	/**
@@ -156,14 +174,6 @@ public class Cluster implements Runnable {
 			assert(false) : "Cluster stopPollThread was interrupted";
 		}
 
-	}
-
-	public int getPort() {
-		return this.port;
-	}
-
-	public int getID() {
-		return id;
 	}
 
 	public static void main(String[] args) {

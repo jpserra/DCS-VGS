@@ -86,6 +86,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.logfilename += socketHostname+":"+socketPort+".log";
 
 		// TODO Como é que se vai fazer quanto aos Restart's?
+		// Colocar uma flag para indicar se se trata de um restart ou não?
+		// Tratar as situações de forma diferente depois...
 		// delete older log files
 		File file = new File (logfilename);
 		file.delete();
@@ -136,6 +138,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		InetSocketAddress address;
 		job.setOriginalRM(new InetSocketAddress(socketHostname, socketPort));
+		
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 

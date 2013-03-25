@@ -40,7 +40,7 @@ public class SynchronizedClientSocket extends Thread {
 		try {
 			socket.connect(address);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// TODO Se falhar a conectar quer dizer que o cliente está morto. O que fazer?
 			e.printStackTrace();
 		}
 
@@ -50,6 +50,7 @@ public class SynchronizedClientSocket extends Thread {
 			out.writeObject(cMessage);
 			out.flush();
 		} catch (IOException e) {
+			// TODO Se a mensagem não for enviada usamos o mesmo hadler?
 			e.printStackTrace();
 		}
 

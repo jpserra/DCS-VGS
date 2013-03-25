@@ -33,7 +33,7 @@ public class Simulation implements Runnable {
 	private final static int nNodes = 50;
 
 	// Number of jobs to run in a cluster.
-	private final static int nJobs = 100;
+	private final static int nJobs = 200;
 
 	// Simulation components
 	Cluster clusters[];
@@ -123,7 +123,7 @@ public class Simulation implements Runnable {
 				// Sleep a while before creating a new job
 				Thread.sleep(20L);
 				//Limit number of jobs
-				if (jobId == 200) {
+				if (jobId == nJobs) {
 					boolean finished = false;
 					while(!finished){
 						outerLoop: for( int i= 0; i< nClusters; i++){

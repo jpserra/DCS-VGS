@@ -42,6 +42,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	// number of jobs to be executed in the simulation
 	private int nJobs;
 
+	// number of jobs finished
+	private int jobsFinished = 0;
+
 	private VectorialClock vClock;
 
 	// local hostname
@@ -57,6 +60,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	// a hashmap linking each resource manager to an estimated load
 	private ConcurrentHashMap<InetSocketAddress, Integer> resourceManagerLoad;
 
+	private long checkThreadPollSleep = 1000;
+	
 	// polling frequency, 1hz
 	private long pollSleep = 100;
 
@@ -117,6 +122,23 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	}
 
+	private void launchCheckThread() {
+		// Thread that checks if the simulation is over.
+		new Thread(new Runnable() {
+			public void run() {
+				while(jobsFinished < nJobs) {
+					try {
+						Thread.sleep(checkThreadPollSleep);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				//TODO Enviar mensagem aos RM's conectados a indicar que a simulacao acabou.
+				System.out.println("GS <"+hostname+":"+port+">: A SIMULACAO ACABOU!");
+			}
+		}).start();
+	}
+
 	private void initilizeGridScheduler(int id, int nEntities, int nJobs, String hostname, int port){
 
 		this.hostname = hostname;
@@ -128,6 +150,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		// TODO Como é que se vai fazer quanto aos Restart's?
 		// Colocar uma flag para indicar se se trata de um restart ou não?
+		// Tratar as situações de forma diferente depois...
 		//delete older log files
 		File file = new File (logfilename);
 		file.delete();
@@ -142,13 +165,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		syncSocket = new SynchronizedSocket(hostname, port);
 		syncSocket.addMessageReceivedHandler(this);
-
-		// Thread that checks if the simulation is over.
-		new Thread(new Runnable() {
-			public void run() {
-				//TODO Check if the simulation is over using the number of jobs variable.
-			}
-		}).start();
+		
+		launchCheckThread();
 
 	}
 
@@ -238,12 +256,12 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		// resource manager wants to offload a job to us 
+		// resource manager wants to offload a job to us
+		// there is no need to log because the RM is waiting for an ACK.
+		// The ACK message will only be sent when the Job is delegated to another RM.
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
-			//TODO aqui precisa de log?
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			jobQueue.add(controlMessage.getJob());
-			//Syncing
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobArrival) {			
@@ -254,7 +272,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			//TODO Logar accao...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
-			synchronizeWIthAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, hostname, port));
+			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, hostname, port));
 
 			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
 				// Prepare a different message but mantain the clock.
@@ -287,7 +305,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			//TODO Logar accao...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
 
-			synchronizeWIthAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, hostname, port));
+			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobStartedAck, hostname, port);
 			msg.setClock(tempVC.getClock());
 			return msg;
@@ -306,10 +324,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			tempVC = vClock;
 
-			//TODO Logar accao...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
+			jobsFinished++;
 
-			synchronizeWIthAllGS(new ControlMessage(ControlMessageType.GSLogJobCompleted, hostname, port));
+			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobCompleted, hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobCompletedAck, hostname, port);
 			msg.setClock(tempVC.getClock());
 			return msg;
@@ -319,8 +337,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 			vClock.updateClock(controlMessage.getClock(), identifier);
 
-			//TODO Fazer log...
 			LogManager.writeToBinary(logfilename,controlMessage,true);
+			jobsFinished++;
 
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.GSLogJobCompletedAck, hostname, port));
 		}
@@ -460,9 +478,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	//Method called when a message arrives
 	private synchronized void logMessage(ControlMessage message) {
 
-		//TODO Sincronizao do log... Ver as mensagens que tim de ser logadas.
-		// Chamar um metodo que faz isto nos locais adequados.
-
 		if(message.getType() != ControlMessageType.ReplyLoad && message.getType() != ControlMessageType.GSSendLogEntry ){
 			this.logEntry = new LogEntry(message);
 			log.add(this.logEntry);
@@ -478,20 +493,32 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}	
 	}
 
-	/*
+	/**
 	 * Returns the entire history of messages saves on the Grid Scheduler Log
 	 */
 	public ArrayList<LogEntry> getFullLog(){
 		return log;
 	}
 
+	/**
+	 * Prepares the message passed as argument to be sent to another entity.
+	 * 
+	 * Some of the messages need to include the local clock in order to let other entities synchronize their own and also have the ability to order the events. 
+	 * @param msg
+	 * @return the message already with the updated clock.
+	 */
 	private synchronized ControlMessage prepareMessageToSend(ControlMessage msg) {
 		vClock.incrementClock(identifier);
 		msg.setClock(vClock.getClock());
 		return msg;
 	}
 
-	private void synchronizeWIthAllGS(ControlMessage messageToSend) {
+	/**
+	 * A message is sent to all the GS in the list of Grid Schedulers in order to synchronize events.
+	 * The client blocks until it gets at least a positive response from one of the other GS. 
+	 * @param messageToSend
+	 */
+	private void synchronizeWithAllGS(ControlMessage messageToSend) {
 
 		SyncLog syncLog = new SyncLog();
 		SynchronizedClientSocket syncClientSocket;
@@ -544,6 +571,5 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			System.exit(1);
 		}
 	}
-
 
 }
