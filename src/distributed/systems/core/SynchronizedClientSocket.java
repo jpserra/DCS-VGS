@@ -35,19 +35,21 @@ public class SynchronizedClientSocket extends Thread {
 		ControlMessage msg = null;
 		ObjectOutputStream out = null;
 		ControlMessage message = null;
+		boolean exceptionRequiresResponse = false;
 
 		// Connect the socket
 		try {
 			socket.connect(address);
 		} catch (IOException e) {
-			handler.onConnectExceptionThrown(cMessage, address, requiresRepsonse);
+			message = handler.onConnectExceptionThrown(cMessage, address, requiresRepsonse);
+			exceptionRequiresResponse = requiresRepsonse;
+			requiresRepsonse = false;
 			e.printStackTrace();
 			try {
 				socket.close();
 			} catch (IOException ex) {
 				
 			}
-			return;
 		}
 		
 		// Send the message
@@ -56,7 +58,9 @@ public class SynchronizedClientSocket extends Thread {
 			out.writeObject(cMessage);
 			out.flush();
 		} catch (IOException e) {
-			// TODO Se a mensagem não for enviada usamos o mesmo hadler?
+			message = handler.onWriteExceptionThrown(cMessage, address, requiresRepsonse);
+			exceptionRequiresResponse = requiresRepsonse;
+			requiresRepsonse = false;
 			e.printStackTrace();
 		}
 
@@ -68,7 +72,7 @@ public class SynchronizedClientSocket extends Thread {
 				in = new ObjectInputStream(socket.getInputStream());
 				msg = (ControlMessage)in.readObject();
 
-				// In case of a log synchronization, the main thread should be awaken in order to proced.
+				// In case of a log synchronization, the sender should be awaken after the message.
 				if (syncLog != null ) {
 					syncLog.setArrived();
 				}
@@ -97,7 +101,7 @@ public class SynchronizedClientSocket extends Thread {
 
 		// In case there is an exception thrown, a new message can be created.
 		// If that is the case, that message will be sent in the same thread.
-		if(message != null) sendMessageInSameThread(message);
+		if(message != null) sendMessageInSameThread(message, exceptionRequiresResponse);
 
 	}
 
@@ -120,9 +124,9 @@ public class SynchronizedClientSocket extends Thread {
 		t.start();
 	}
 
-	public void sendMessageInSameThread(ControlMessage message) {
+	public void sendMessageInSameThread(ControlMessage message, boolean requiresResponse) {
 		this.cMessage = message;
-		requiresRepsonse = true;
+		this.requiresRepsonse = requiresResponse;
 		this.run();
 	}
 

@@ -369,8 +369,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 			if(checkGSFailures(destinationAddress)) {
 				SynchronizedClientSocket client = new SynchronizedClientSocket(controlMessage, destinationAddress, this, timeout);
-				if (requiresRepsonse) client.sendMessage();
-				else client.sendMessageWithoutResponse();
+					client.sendMessage();
 			}
 		}
 		
