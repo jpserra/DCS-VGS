@@ -47,4 +47,13 @@ public class VectorialClock implements Serializable {
         }
     }
     
+    public String toString(){
+    	String s = "[ ";
+   for( int i= 0; i< this.clock.length; i++){
+  	 s+=  this.clock[i];
+   	 s+=", "; 
+    }
+    s+= "]";
+    return s;}
+    
 }

@@ -2,32 +2,41 @@ package distributed.systems.core;
 
 import java.io.Serializable;
 import java.net.InetSocketAddress;
-import distributed.systems.gridscheduler.model.*;
+import distributed.systems.gridscheduler.model.ControlMessage;
+import distributed.systems.gridscheduler.model.Job;
 
 
 public class LogEntry implements Serializable {
 
 	private static final long serialVersionUID = -8054991011970570003L;
 	private InetSocketAddress origin;
-	private Long id; //Generic id can be JobID, ClusterID and GSID
+//	private Long id; //Generic id can be JobID, ClusterID and GSID
 	private String event; 
 	private int[] clock;
+	private Job job;
 
 	public LogEntry(ControlMessage message){
 		this.setOrigin(message.getInetAddress());
 		this.setEvent(message.getType().toString());
 		if(message.getJob() != null)
-			this.setId(message.getJob().getId());
+			this.setJob(message.getJob());
+		this.setClock(message.getClock());
+	}
+	
+	public LogEntry(Job j, String evnt, int[] clock){
+		this.setOrigin(null);
+		this.setEvent(evnt);
+			this.setJob(j);
 		this.setClock(clock);
 	}
-
-	public Long getId() {
-		return id;
-	}
-
-	public void setId(Long id) {
-		this.id = id;
-	}
+//
+//	public Long getId() {
+//		return id;
+//	}
+//
+//	public void setId(Long id) {
+//		this.id = id;
+//	}
 
 	public String getEvent() {
 		return event;
@@ -41,8 +50,8 @@ public class LogEntry implements Serializable {
 		return clock;
 	}
 
-	public void setClock(int[] clock) {
-		this.clock = clock;
+	public void setClock(int[] clock2) {
+		this.clock = clock2;
 	}
 
 	public InetSocketAddress getOrigin() {
@@ -60,18 +69,33 @@ public class LogEntry implements Serializable {
 		if(origin != null)
 			s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
 
-		if(id != null)
-			s += "ID: " + id + " | ";
+//		if(id != null)
+//			s += "ID: " + id + " | ";
 
 		if(event != null)
 			s += "Event: " + event + " | "; 
 
-		if(clock != null)
-			s += "VecClock: " + clock ;
+		if(job != null)
+			s += "Job: " + job.toString() + " | ";
+		if(clock != null){
+			s += "VecClock: [ ";
+		
+			for(int i = 0; i< clock.length; i++)
+				s+= clock[i] + ", ";
+		}
+		
 
-		s+= "]";
+		s+= "] ]";
 		return s;
 
+	}
+
+	public Job getJob() {
+		return job;
+	}
+
+	public void setJob(Job job) {
+		this.job = job;
 	}
 
 }

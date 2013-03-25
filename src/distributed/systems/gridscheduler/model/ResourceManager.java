@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
+import distributed.systems.core.LogEntry;
 import distributed.systems.core.LogManager;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
@@ -159,7 +160,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		} else { // otherwise store it in the local queue
 			jobQueue.add(job);
 			sendJobEvent(job, ControlMessageType.JobArrival);
-			LogManager.writeToBinary(logfilename,job,true);
+			
+			LogEntry e = new LogEntry(job, "Job Arrived", vClock.getClock());
+			LogManager.writeToBinary(logfilename,e,true);
 			scheduleJobs();
 		}
 
@@ -188,7 +191,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		while ( ((waitingJob = getWaitingJob()) != null) && ((freeNode = cluster.getFreeNode()) != null) ) {
 			freeNode.startJob(waitingJob);
 			sendJobEvent(waitingJob,ControlMessageType.JobStarted);
-			LogManager.writeToBinary(logfilename,waitingJob,true);
+			LogEntry e = new LogEntry(waitingJob, "Job Started", vClock.getClock());
+			LogManager.writeToBinary(logfilename,e,true);
+			
 		}
 	}
 
@@ -203,7 +208,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// try to contact a GS in order to inform that a job was completed locally
 		sendJobEvent(job,ControlMessageType.JobCompleted);
 		// write in the log that the job was executed
-		LogManager.writeToBinary(logfilename,job,true);
+		LogEntry e = new LogEntry(job, "Job Finished", vClock.getClock());
+		LogManager.writeToBinary(logfilename,e,true);
 		// job finished, remove it from our pool
 		jobQueue.remove(job);
 	}
@@ -312,8 +318,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// RM receives add Job from a GS
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
-			Job j = controlMessage.getJob();
-			LogManager.writeToBinary(logfilename,j,true);
+			LogEntry e = new LogEntry(controlMessage);
+			LogManager.writeToBinary(logfilename,e,true);
 
 			jobQueue.add(controlMessage.getJob());
 
