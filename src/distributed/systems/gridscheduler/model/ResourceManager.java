@@ -117,7 +117,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		@Override
 		public void run() {
 			System.out.println("TIME OUT!");
-			handler.onExceptionThrown(message, destinationAddress);
+			handler.onReadExceptionThrown(message, destinationAddress);
 		}
 	}
 
@@ -307,11 +307,16 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		if (controlMessage.getType() == ControlMessageType.RequestLoad)
 		{
+			// RM updates the GS list.
+			for(InetSocketAddress addr : controlMessage.getGridSchedulersList()) {
+				gsList.put(addr, 0);
+			}
+			
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad);
 			replyMessage.setHostname(socketHostname);
 			replyMessage.setPort(socketPort);
 			replyMessage.setLoad(jobQueue.size());
-			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
+			
 			return replyMessage;
 		}
 
@@ -369,7 +374,21 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	}
 
 	@Override
-	public ControlMessage onExceptionThrown(Message message,
+	public ControlMessage onConnectExceptionThrown(Message message,
+			InetSocketAddress destinationAddress, boolean requiresRepsonse) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ControlMessage onWriteExceptionThrown(Message message,
+			InetSocketAddress destinationAddress, boolean requiresRepsonse) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ControlMessage onReadExceptionThrown(Message message,
 			InetSocketAddress destinationAddress) {
 		assert(message instanceof ControlMessage) : "parameter 'message' should be of type ControlMessage";
 		assert(message != null) : "parameter 'message' cannot be null";
@@ -377,7 +396,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		ControlMessage controlMessage = (ControlMessage)message;
 		gsList.replace(destinationAddress, gsList.get(destinationAddress)+1);
 		if (gsList.get(destinationAddress) > 2) {
-			//gsList.remove(destinationAddress);
+			gsList.remove(destinationAddress);
 			return null;
 		}
 
@@ -394,7 +413,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			if (t != null) t.cancel();
 		}
 
-		// resource manager wants to offload a job to us 
 		if (controlMessage.getType() == ControlMessageType.JobArrival ||
 				controlMessage.getType() == ControlMessageType.JobStarted ||
 				controlMessage.getType() == ControlMessageType.JobStarted) {
@@ -462,5 +480,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		syncClientSocket.sendMessage();
 		//TODO Maybe send to 2 GS's??
 	}
+
 
 }

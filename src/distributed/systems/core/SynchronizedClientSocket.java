@@ -40,10 +40,16 @@ public class SynchronizedClientSocket extends Thread {
 		try {
 			socket.connect(address);
 		} catch (IOException e) {
-			// TODO Se falhar a conectar quer dizer que o cliente está morto. O que fazer?
+			handler.onConnectExceptionThrown(cMessage, address, requiresRepsonse);
 			e.printStackTrace();
+			try {
+				socket.close();
+			} catch (IOException ex) {
+				
+			}
+			return;
 		}
-
+		
 		// Send the message
 		try {
 			out = new ObjectOutputStream(socket.getOutputStream());
@@ -72,10 +78,10 @@ public class SynchronizedClientSocket extends Thread {
 
 			} catch (SocketTimeoutException e) {
 				System.out.println("Timeout!!!!");
-				message = handler.onExceptionThrown(cMessage, address);
+				message = handler.onReadExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (IOException e) {
-				message = handler.onExceptionThrown(cMessage, address);
+				message = handler.onReadExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();

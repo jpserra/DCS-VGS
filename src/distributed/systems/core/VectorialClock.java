@@ -23,7 +23,7 @@ public class VectorialClock implements Serializable {
      * @return clock
      */
     public int[] getClock() {
-        return clock;
+        return clock.clone();
     }
 
     /**
