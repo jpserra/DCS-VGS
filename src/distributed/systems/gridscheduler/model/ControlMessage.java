@@ -1,6 +1,7 @@
 package distributed.systems.gridscheduler.model;
 
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.Set;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.Message;
@@ -140,7 +141,7 @@ public class ControlMessage extends Message {
 	}
 
 	public void setGridSchedulersList(Set<InetSocketAddress> gridSchedulersList) {
-		this.gridSchedulersList = gridSchedulersList;
+		this.gridSchedulersList = new HashSet<InetSocketAddress>(gridSchedulersList);
 	}
 
 	public LogEntry getLogEntry() {

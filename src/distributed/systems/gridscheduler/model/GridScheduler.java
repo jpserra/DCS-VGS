@@ -148,9 +148,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.nEntities = nEntities;
 		this.logfilename += "GS_" + id +".log";
 
-		// TODO Como é que se vai fazer quanto aos Restart's?
-		// Colocar uma flag para indicar se se trata de um restart ou não?
-		// Tratar as situações de forma diferente depois...
+		// TODO Como  que se vai fazer quanto aos Restart's?
+		// Colocar uma flag para indicar se se trata de um restart ou no?
+		// Tratar as situaes de forma diferente depois...
 		//delete older log files
 		File file = new File (logfilename);
 		file.delete();
