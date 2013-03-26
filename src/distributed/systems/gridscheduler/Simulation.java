@@ -6,6 +6,7 @@ import distributed.systems.core.LogManager;
 import distributed.systems.gridscheduler.gui.ClusterStatusPanel;
 import distributed.systems.gridscheduler.gui.GridSchedulerPanel;
 import distributed.systems.gridscheduler.model.Cluster;
+import distributed.systems.gridscheduler.model.ControlMessage;
 import distributed.systems.gridscheduler.model.GridScheduler;
 import distributed.systems.gridscheduler.model.Job;
 import distributed.systems.gridscheduler.model.Node;
@@ -74,25 +75,35 @@ public class Simulation implements Runnable {
 		Thread runThread = new Thread(this);
 		runThread.run(); // This method only returns after the simulation has ended
 
+		ControlMessage[] list = null;
 		//Print log
 		System.out.println("Simulation Finished, printing Log... GS1");
 
-		for(LogEntry e: gs1.getFullLog())
-			System.out.println(e.toString());
-
+		
+		list = gs1.getFullLog();
+		for(Object j:  list){
+			System.out.println(j.toString());
+		}
 		System.out.println("Simulation Finished, printing Log... GS2");
 
-		for(LogEntry e: gs2.getFullLog())
-			System.out.println(e.toString());
+		list = gs2.getFullLog();
+		for(Object j: list){
+			System.out.println(j.toString());
+		}
 
 		// Now perform the cleanup
-
-		// Stop clusters
+		LogEntry[] logs = null;
+		
+		
 		for (Cluster cluster : clusters){
-			System.out.println("LOG DO RM Dum CLUSTER");
-			for(Object j: LogManager.readFromBinaryFile(cluster.getResourceManager().getLogFileName())){
-				System.out.println(j.toString());
-			}
+//			System.out.println("LOG DO RM "+ cluster.getID());
+//			logs = cluster.getResourceManager().getLog();
+//
+//			for(Object j: logs){
+//				System.out.println(j.toString());
+//			}
+		
+	// Stop clusters
 			cluster.stopPollThread();
 		}
 

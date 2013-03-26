@@ -42,6 +42,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private int identifier;
 	private int nEntities;
 	private VectorialClock vClock;
+	private LogManager logger;
 
 	private String logfilename = "";
 
@@ -86,6 +87,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += socketHostname+":"+socketPort+".log";
 
+		logger = new LogManager(logfilename);
 		// TODO Como é que se vai fazer quanto aos Restart's?
 		// Colocar uma flag para indicar se se trata de um restart ou não?
 		// Tratar as situações de forma diferente depois...
@@ -162,7 +164,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			sendJobEvent(job, ControlMessageType.JobArrival);
 
 			LogEntry e = new LogEntry(job, "Job Arrived", vClock.getClock());
-			LogManager.writeToBinary(logfilename,e,true);
+			logger.writeToBinary(e,true);
 			scheduleJobs();
 		}
 
@@ -192,7 +194,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			freeNode.startJob(waitingJob);
 			sendJobEvent(waitingJob,ControlMessageType.JobStarted);
 			LogEntry e = new LogEntry(waitingJob, "Job Started", vClock.getClock());
-			LogManager.writeToBinary(logfilename,e,true);
+			logger.writeToBinary(e,true);
 
 		}
 	}
@@ -209,7 +211,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		sendJobEvent(job,ControlMessageType.JobCompleted);
 		// write in the log that the job was executed
 		LogEntry e = new LogEntry(job, "Job Finished", vClock.getClock());
-		LogManager.writeToBinary(logfilename,e,true);
+		logger.writeToBinary(e,true);
 		// job finished, remove it from our pool
 		jobQueue.remove(job);
 	}
@@ -322,7 +324,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
 			LogEntry e = new LogEntry(controlMessage);
-			LogManager.writeToBinary(logfilename,e,true);
+			logger.writeToBinary(e,true);
 
 			jobQueue.add(controlMessage.getJob());
 
@@ -486,6 +488,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		}
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, timeout);
 		syncClientSocket.sendMessage();
+	}
+	
+	public LogEntry[] getLog(){
+		return logger.readOrderedLog();
 	}
 
 

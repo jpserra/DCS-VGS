@@ -20,7 +20,7 @@ public class ControlMessage extends Message {
 	/**
 	 * Generated serial version UID
 	 */
-	private static final long serialVersionUID = -1453428681740343634L;
+	private static final long serialVersionUID = 1453428681740343634L;
 
 	private final ControlMessageType type;
 	private String url;
@@ -38,14 +38,14 @@ public class ControlMessage extends Message {
 	public ControlMessage(ControlMessageType type) {
 		this.type = type;
 	}
-	
+
 	public ControlMessage(ControlMessageType type, String url, int port) {
 		this.type = type;
 		this.url = url;
 		this.port = port;
 
 	}
-	
+
 	public ControlMessage(ControlMessageType type, Job job, String url, int port) {
 		this.type = type;
 		this.job = job;
@@ -53,7 +53,7 @@ public class ControlMessage extends Message {
 		this.port = port;
 
 	}
-	
+
 	public ControlMessage(ControlMessageType type, LogEntry logEntry, String url, int port) {
 		this.type = type;
 		this.logEntry = logEntry;
@@ -109,14 +109,14 @@ public class ControlMessage extends Message {
 	public void setPort(int port) {
 		this.port = port;
 	}
-	
+
 	/**
 	 * @return the url
 	 */
 	public int getPort() {
 		return port;
 	}
-	
+
 	public InetSocketAddress getInetAddress(){
 		return new InetSocketAddress(url, port);
 	}
@@ -158,5 +158,36 @@ public class ControlMessage extends Message {
 
 	public void setClock(int[] clock) {
 		this.clock = clock;
+	}
+
+
+	@Override
+	public String toString(){
+		String s = "[";
+
+		if(clock != null){
+			s += "VecClock: [ ";
+
+			for(int i = 0; i< clock.length; i++)
+				s+= clock[i] + ", ";
+
+			s+= " ]";
+		}
+		if(this.url != null)
+			s += "Origin: " + url+ ":"+port + " | ";
+
+		//		if(id != null)
+		//			s += "ID: " + id + " | ";
+
+		if(this.type != null)
+			s += "Event: " + this.type.toString() + " | "; 
+
+		if(job != null)
+			s += "Job: " + job.toString() + " | ";
+
+
+		s+= " ]";
+		return s;
+
 	}
 }

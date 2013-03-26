@@ -8,7 +8,7 @@ import distributed.systems.gridscheduler.model.Job;
 
 public class LogEntry implements Serializable {
 
-	private static final long serialVersionUID = -8054991011970570003L;
+	private static final long serialVersionUID = 8054991011970570003L;
 	private InetSocketAddress origin;
 //	private Long id; //Generic id can be JobID, ClusterID and GSID
 	private String event; 
@@ -65,7 +65,14 @@ public class LogEntry implements Serializable {
 	@Override
 	public String toString(){
 		String s = "[";
+		
+		if(clock != null){
+			s += "VecClock: [ ";
+		
+			for(int i = 0; i< clock.length; i++)
+				s+= clock[i] + ", ";
 
+			s+= "]";
 		if(origin != null)
 			s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
 
@@ -77,15 +84,11 @@ public class LogEntry implements Serializable {
 
 		if(job != null)
 			s += "Job: " + job.toString() + " | ";
-		if(clock != null){
-			s += "VecClock: [ ";
 		
-			for(int i = 0; i< clock.length; i++)
-				s+= clock[i] + ", ";
 		}
 		
 
-		s+= "] ]";
+		s+= " ]";
 		return s;
 
 	}
