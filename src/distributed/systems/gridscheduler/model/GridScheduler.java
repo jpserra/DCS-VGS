@@ -395,7 +395,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			synchronized (this) {
 				controlMessage.setClock(vClock.updateClock(controlMessage.getClock()));
-				msg = new ControlMessage(ControlMessageType.GSLogJobCompletedAck, hostname, port, vClock.getClock());
+				msg = new ControlMessage(ControlMessageType.GSLogJobCompletedAck, controlMessage.getJob(), hostname, port, vClock.getClock());
 			}
 			logger.writeToBinary(new LogEntry(controlMessage),true);
 			if(finishedJobs.add(controlMessage.getJob().getId())) {
