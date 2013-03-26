@@ -363,6 +363,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			vClock.updateClock(controlMessage.getClock());
 		}
 		
+		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
+			System.out.println("SIMULATION OVER:" + controlMessage.getUrl() + " " + controlMessage.getPort());
+		}
+		
 
 		return null;
 

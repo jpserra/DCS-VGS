@@ -41,7 +41,7 @@ public class Cluster implements Runnable {
 	 * @param name the name of this cluster
 	 * @param nrNodes the number of nodes in this cluster
 	 */
-	public Cluster(int id, int nEntities, int nodeCount, int nJobsToExecute, 
+	public Cluster(final int id, int nEntities, int nodeCount, final int nJobsToExecute, 
 			String hostname, int port, String gridSchedulerHostname, 
 			int gridSchedulerPort, boolean restart) {
 		// Preconditions
@@ -71,6 +71,24 @@ public class Cluster implements Runnable {
 			n.addNodeEventHandler(resourceManager);
 			nodes.add(n);
 		}
+		
+		Thread createJobs = new Thread(new Runnable() {
+			public void run() {
+				int jobId = id*100000;
+				for(int i = 0; i < nJobsToExecute; i++) {
+					Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
+					getResourceManager().addJob(job);
+					// Sleep a while before creating a new job
+					try {
+						Thread.sleep(20L);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}	
+				}
+			}
+		});
+		createJobs.start();
 
 		// Start the polling thread
 		running = true;
