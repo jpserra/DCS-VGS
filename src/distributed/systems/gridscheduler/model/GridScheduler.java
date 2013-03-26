@@ -1,13 +1,12 @@
 package distributed.systems.gridscheduler.model;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.LogManager;
@@ -538,7 +537,32 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * Returns the entire history of messages saves on the Grid Scheduler Log
 	 */
 	public ControlMessage[] getFullLog(){
-		return logger.readOrderedLogMessages();
+		
+		ControlMessage[] log = logger.readOrderedLogMessages();
+		try {
+			 
+ 
+			File file = new File(logfilename);
+ 
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+ 
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+			
+			for(ControlMessage m : log)
+			bw.write(m.toString() + "\n");
+			
+			bw.close();
+ 
+			System.out.println("Done");
+ 
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return log;
 	}
 
 	/**
