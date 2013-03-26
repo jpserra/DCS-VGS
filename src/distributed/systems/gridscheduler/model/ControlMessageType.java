@@ -16,7 +16,7 @@ public enum ControlMessageType {
 	JobArrival,
 	JobStarted,
 	JobCompleted,
-	Restart,
+	
 
 
 	// from GS to RM
@@ -27,6 +27,8 @@ public enum ControlMessageType {
 	JobStartedAck,
 	JobCompletedAck,
 	SimulationOver,
+	Restart,
+	RestartAck,
 
 	// both ways
 	AddJob,
@@ -41,6 +43,8 @@ public enum ControlMessageType {
 	GSLogJobStartedAck,
 	GSLogJobCompleted,
 	GSLogJobCompletedAck,
+	GSLogRestart,
+	GSLogRestartAck,
 
 
 	// GS to GS or GS to RM
