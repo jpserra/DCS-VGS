@@ -43,15 +43,28 @@ public class ControlMessage extends Message {
 		this.type = type;
 		this.url = url;
 		this.port = port;
-
 	}
-
+	
 	public ControlMessage(ControlMessageType type, Job job, String url, int port) {
 		this.type = type;
 		this.job = job;
 		this.url = url;
 		this.port = port;
-
+	}
+	
+	public ControlMessage(ControlMessageType type, String url, int port, int[] clock) {
+		this.type = type;
+		this.url = url;
+		this.port = port;
+		this.clock = clock;
+	}
+	
+	public ControlMessage(ControlMessageType type, Job job, String url, int port, int[] clock) {
+		this.type = type;
+		this.job = job;
+		this.url = url;
+		this.port = port;
+		this.clock = clock;
 	}
 
 	public ControlMessage(ControlMessageType type, LogEntry logEntry, String url, int port) {
