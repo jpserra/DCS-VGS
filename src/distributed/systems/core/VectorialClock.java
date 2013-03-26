@@ -9,51 +9,58 @@ public class VectorialClock implements Serializable {
 
 	private static final long serialVersionUID = -4298646294358826625L;
 
-    private int[] clock;
+	private int[] clock;
 
-    public VectorialClock(int nEntities) {
-        clock = new int[nEntities];
-        for (int i = 0; i < nEntities; i++) {
-            clock[i] = 0;
-        }
-    }
+	public VectorialClock(int nEntities) {
+		clock = new int[nEntities];
+		for (int i = 0; i < nEntities; i++) {
+			clock[i] = 0;
+		}
+	}
 
-    /**
-     * Returns the clock.
-     * @return clock
-     */
-    public int[] getClock() {
-        return clock.clone();
-    }
+	/**
+	 * Returns the clock.
+	 * @return clock
+	 */
+	public int[] getClock() {
+		return clock.clone();
+	}
 
-    /**
-     * Increment the clock at a specified ID by one unit
-     * @param id 
-     */
-    public synchronized void incrementClock(int id) {
-        clock[id]++;
-    }
+	/**
+	 * Increment the clock at a specified ID by one unit
+	 * @param id 
+	 */
+	public synchronized void incrementClock(int id) {
+		clock[id]++;
+	}
 
-    /**
-     * Updates the clock using an external clock as reference.
-     * @param externalClock
-     * @param id 
-     */
-    public synchronized void updateClock(int[] externalClock, int id) {
-        for (int i = 0; i < clock.length; i++) {
-            if (externalClock[i] > clock[i]) {
-                clock[i] = externalClock[i];
-            }
-        }
-    }
-    
-    public String toString(){
-    	String s = "[ ";
-   for( int i= 0; i< this.clock.length; i++){
-  	 s+=  this.clock[i];
-   	 s+=", "; 
-    }
-    s+= "]";
-    return s;}
-    
+	/**
+	 * Updates the clock using an external clock as reference.
+	 * @param externalClock
+	 * @param id 
+	 */
+	public synchronized int[] updateClock(int[] externalClock) {
+		for (int i = 0; i < clock.length; i++) {
+			if (externalClock[i] > clock[i]) {
+				clock[i] = externalClock[i];
+			}
+		}
+		return clock;
+	}
+
+	public void setClock(int[] externalClock) {
+		for (int i = 0; i < clock.length; i++) {
+			clock[i] = externalClock[i];
+		}
+	}
+
+	public String toString(){
+		String s = "[ ";
+		for( int i= 0; i< this.clock.length; i++){
+			s+=  this.clock[i];
+			s+=", "; 
+		}
+		s+= "]";
+		return s;}
+
 }

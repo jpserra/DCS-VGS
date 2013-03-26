@@ -326,7 +326,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			jobQueue.add(controlMessage.getJob());
 
-			vClock.updateClock(controlMessage.getClock(), identifier);
+			vClock.updateClock(controlMessage.getClock());
 			//Now only sends message to the GS from where the message came from.
 			ControlMessage msg;
 			synchronized (this) {
@@ -355,7 +355,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.JobArrivalAck ||
 				controlMessage.getType() == ControlMessageType.JobCompletedAck ||
 				controlMessage.getType() == ControlMessageType.JobStartedAck) {
-			vClock.updateClock(controlMessage.getClock(), identifier);
+			vClock.updateClock(controlMessage.getClock());
 		}
 		
 
