@@ -71,7 +71,7 @@ public class Cluster implements Runnable {
 			n.addNodeEventHandler(resourceManager);
 			nodes.add(n);
 		}
-		
+		/*
 		Thread createJobs = new Thread(new Runnable() {
 			public void run() {
 				int jobId = id*100000;
@@ -89,7 +89,7 @@ public class Cluster implements Runnable {
 			}
 		});
 		createJobs.start();
-
+*/
 		// Start the polling thread
 		running = true;
 		pollingThread = new Thread(this);

@@ -85,7 +85,7 @@ public class Simulation implements Runnable {
 		System.out.println("Simulation Finished, printing Log... GS2");
 
 		list = gs2.getFullLog();
-		for(Object j: list){
+		for(LogEntry j: list){
 			System.out.println(j.toString());
 		}
 

@@ -161,13 +161,13 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 				//TODO Enviar mensagem aos RM's conectados a indicar que a simulacao acabou.
 				System.out.println("GS <"+hostname+":"+port+">: A SIMULACAO ACABOU!");
-				ControlMessage message;
+			/*	ControlMessage message;
 				SynchronizedClientSocket syncClientSocket;
 				for(InetSocketAddress address : resourceManagerLoad.keySet()) {
 					message = new ControlMessage(ControlMessageType.SimulationOver,hostname, port);
 					syncClientSocket = new SynchronizedClientSocket(message, address, handler, timeout);
 					syncClientSocket.sendMessage();
-				}
+				}*/
 			}
 		}).start();
 	}
