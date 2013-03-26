@@ -280,7 +280,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 			logger.writeToBinary(controlMessage,true);
 
-			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, hostname, port));
+			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, controlMessage.getJob(), hostname, port));
 
 			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
 				// Prepare a different message but mantain the clock.
