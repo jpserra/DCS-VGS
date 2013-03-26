@@ -17,7 +17,36 @@ public class LogEntry implements Serializable {
 
 	public LogEntry(ControlMessage message){
 		this.setOrigin(message.getInetAddress());
-		this.setEvent(message.getType().toString());
+		switch(message.getType().toString()){
+		
+		case "JobArrival":
+			this.setEvent("JOB_ARRIVAL");
+			break;
+		
+		case "JobStarted":
+			this.setEvent("JOB_STARTED");
+			break;
+		
+		case "JobCompleted":
+			this.setEvent("JOB_COMPLETED");
+			break;
+		
+		case "GSLogJobArrival":
+			this.setEvent("JOB_ARRIVAL");
+			break;
+		
+		case "GSLogJobStarted":
+			this.setEvent("JOB_STARTED");
+			break;
+			
+		case "GSLogJobCompleted":
+			this.setEvent("JOB_COMPLETED");
+			break;
+			
+			default: 		this.setEvent(message.getType().toString());
+
+		}
+		
 		if(message.getJob() != null)
 			this.setJob(message.getJob());
 		this.setClock(message.getClock());

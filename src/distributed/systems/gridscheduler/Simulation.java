@@ -2,11 +2,9 @@ package distributed.systems.gridscheduler;
 
 import javax.swing.JFrame;
 import distributed.systems.core.LogEntry;
-import distributed.systems.core.LogManager;
 import distributed.systems.gridscheduler.gui.ClusterStatusPanel;
 import distributed.systems.gridscheduler.gui.GridSchedulerPanel;
 import distributed.systems.gridscheduler.model.Cluster;
-import distributed.systems.gridscheduler.model.ControlMessage;
 import distributed.systems.gridscheduler.model.GridScheduler;
 import distributed.systems.gridscheduler.model.Job;
 import distributed.systems.gridscheduler.model.Node;
@@ -75,7 +73,7 @@ public class Simulation implements Runnable {
 		Thread runThread = new Thread(this);
 		runThread.run(); // This method only returns after the simulation has ended
 
-		ControlMessage[] list = null;
+		LogEntry[] list = null;
 		//Print log
 		System.out.println("Simulation Finished, printing Log... GS1");
 

@@ -278,7 +278,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			// Backup the original clock that was recieved when the event arrived
 			tempVC.setClock(vClock.updateClock(controlMessage.getClock()));
 			
-			logger.writeToBinary(controlMessage,true);
+			logger.writeToBinary(new LogEntry(controlMessage),true);
 
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, controlMessage.getJob(), hostname, port));
 
@@ -300,14 +300,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival) {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			vClock.updateClock(controlMessage.getClock());
-			logger.writeToBinary(controlMessage,true);
+			logger.writeToBinary(new LogEntry(controlMessage),true);
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.GSLogJobArrivalAck, hostname, port));
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobStarted) {
 			// Update the clock and store it in a temporary one.
 			tempVC.setClock(vClock.updateClock(controlMessage.getClock()));
-			logger.writeToBinary(controlMessage,true);
+			logger.writeToBinary(new LogEntry(controlMessage),true);
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, controlMessage.getJob(), hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobStartedAck, hostname, port);
 			msg.setClock(tempVC.getClock());
@@ -317,14 +317,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.GSLogJobStarted) {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			vClock.updateClock(controlMessage.getClock());
-			logger.writeToBinary(controlMessage,true);
+			logger.writeToBinary(new LogEntry(controlMessage),true);
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.GSLogJobStartedAck, hostname, port));
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
 			// Update the clock and store it in a temporary one.
 			tempVC.setClock(vClock.updateClock(controlMessage.getClock()));
-			logger.writeToBinary(controlMessage,true);
+			logger.writeToBinary(new LogEntry(controlMessage),true);
 			if(finishedJobs.add(controlMessage.getJob().getId())) {
 				jobsFinished++;
 			}
@@ -337,7 +337,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.GSLogJobCompleted) {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			vClock.updateClock(controlMessage.getClock());
-			logger.writeToBinary(controlMessage,true);
+			logger.writeToBinary(new LogEntry(controlMessage),true);
 			jobsFinished++;
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.GSLogJobCompletedAck, hostname, port));
 		}
@@ -536,9 +536,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	/**
 	 * Returns the entire history of messages saves on the Grid Scheduler Log
 	 */
-	public ControlMessage[] getFullLog(){
+	public LogEntry[] getFullLog(){
 
-		ControlMessage[] log = logger.readOrderedLogMessages();
+		LogEntry[] log = logger.readOrderedLog();
 		try {
 
 
@@ -552,7 +552,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
 
-			for(ControlMessage m : log)
+			for(LogEntry m : log)
 				bw.write(m.toString() + "\n");
 
 			bw.close();
