@@ -49,8 +49,8 @@ public class Simulation implements Runnable {
 
 		int nEntities = nClusters + nGS;
 		// Setup the model. Create a grid scheduler and a set of clusters.
-		gs1 = new GridScheduler( 0, nEntities, nJobs, "localhost", startingPort);
-		gs2 = new GridScheduler( 1, nEntities, nJobs, "localhost", startingPort+1, "localhost", 50000);
+		gs1 = new GridScheduler( 0, nEntities, nJobs, "localhost", startingPort, false);
+		gs2 = new GridScheduler( 1, nEntities, nJobs, "localhost", startingPort+1, "localhost", 50000, false);
 
 		// Create a new gridscheduler panel so we can monitor our components
 		gridSchedulerPanel = new GridSchedulerPanel(gs1,gs2);

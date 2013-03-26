@@ -16,6 +16,7 @@ public enum ControlMessageType {
 	JobArrival,
 	JobStarted,
 	JobCompleted,
+	Restart,
 
 
 	// from GS to RM

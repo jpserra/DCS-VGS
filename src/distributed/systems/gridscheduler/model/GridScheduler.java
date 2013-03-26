@@ -87,7 +87,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * @param hostname the gridscheduler's hostname to register at
 	 * @param port the gridscheduler's port to register at
 	 */
-	public GridScheduler(int id, int nEntities, int nJobs, String hostname, int port) {
+	public GridScheduler(int id, int nEntities, int nJobs, String hostname, int port, boolean restart) {
 		// preconditions
 		assert(hostname != null) : "parameter 'url' cannot be null";
 		assert(port > 0) : "parameter 'port'";
@@ -95,14 +95,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		assert(nEntities > 0);
 
 		//initialize the internal structure
-		initilizeGridScheduler(id, nEntities, nJobs, hostname, port);
+		initilizeGridScheduler(id, nEntities, nJobs, hostname, port, restart);
 
 		running = true;
 		pollingThread = new Thread(this);
 		pollingThread.start();
 	}
 
-	public GridScheduler(int id, int nEntities, int nJobs, String hostname, int port, String otherGSHostname, int otherGSPort) {
+	public GridScheduler(int id, int nEntities, int nJobs, String hostname, int port, String otherGSHostname, int otherGSPort, boolean restart) {
 		//preconditions
 		assert(hostname != null) : "parameter 'hostname' cannot be null";
 		assert(port > 0) : "parameter 'port' cannot be less than or equal to 0";
@@ -112,7 +112,22 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		assert(nEntities > 0) : "parameter 'nEntities' should be greater than 0";
 
 		//initialize internal structure
-		initilizeGridScheduler(id, nEntities, nJobs, hostname, port);
+		initilizeGridScheduler(id, nEntities, nJobs, hostname, port, restart);
+		
+		// in the case of a restart
+		if(restart) {
+			//TODO Read file to see last clock
+			
+			// Send message to the GS provided in order to log the restart event.
+			ControlMessage cMessage =  new ControlMessage(ControlMessageType.Restart, hostname, port);
+			cMessage.setClock(vClock.getClock());
+			SynchronizedClientSocket syncClientSocket;
+			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this, timeout);
+			syncClientSocket.sendMessage();
+		} else {
+			File file = new File (logfilename);
+			file.delete();
+		}
 
 		//in the case where another GS was provided, query that GS for the complete GS list
 		ControlMessage cMessage =  new ControlMessage(ControlMessageType.GSRequestsGSList, hostname, port);
@@ -152,7 +167,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}).start();
 	}
 
-	private void initilizeGridScheduler(int id, int nEntities, int nJobs, String hostname, int port){
+	private void initilizeGridScheduler(int id, int nEntities, int nJobs, String hostname, int port, boolean restart){
 
 		this.hostname = hostname;
 		this.port = port;
@@ -163,12 +178,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.handler = this;
 
 		this.logger = new LogManager(logfilename);
-		// TODO Como  que se vai fazer quanto aos Restart's?
-		// Colocar uma flag para indicar se se trata de um restart ou no?
-		// Tratar as situaes de forma diferente depois...
-		//delete older log files
-		File file = new File (logfilename);
-		file.delete();
 
 		gridSchedulersList = new ConcurrentHashMap<InetSocketAddress,Integer>();
 		gridSchedulersList.put(new InetSocketAddress(hostname, port),0);
@@ -616,7 +625,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		String usage = "Usage: GridScheduler <id> <nEntities> <nJobs> <hostname> <port> [<otherGSHostname> <otherGSPort>] [-r]";
 
-		if(args.length != 5 && args.length != 7) {
+		if(args.length < 5 || args.length > 8) {
 			System.out.println(usage);
 			System.exit(1);
 		}
@@ -628,7 +637,21 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						Integer.parseInt(args[1]),
 						Integer.parseInt(args[2]),
 						args[3], 
-						Integer.parseInt(args[4]));
+						Integer.parseInt(args[4]),
+						false);
+			} else if (args.length == 6) {
+				if(args[5].equals("-r")) {
+					new GridScheduler(
+							Integer.parseInt(args[0]), 
+							Integer.parseInt(args[1]),
+							Integer.parseInt(args[2]),
+							args[3], 
+							Integer.parseInt(args[4]),
+							true);
+				} else {
+					System.out.println("Wrong flag!\n"+usage);
+					System.exit(1);
+				}
 			}
 			else if (args.length == 7) {
 				new GridScheduler(
@@ -638,11 +661,27 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						args[3], 
 						Integer.parseInt(args[4]),
 						args[5], 
-						Integer.parseInt(args[6]));
+						Integer.parseInt(args[6]),
+						false);
+			}  else if (args.length == 8) {
+			if(args[7].equals("-r")) {
+				new GridScheduler(
+						Integer.parseInt(args[0]), 
+						Integer.parseInt(args[1]),
+						Integer.parseInt(args[2]),
+						args[3], 
+						Integer.parseInt(args[4]),
+						args[5], 
+						Integer.parseInt(args[6]),
+						true);
+			} else {
+				System.out.println("Wrong flag!\n"+usage);
+				System.exit(1);
 			}
+		}
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.out.println(usage);
+			System.out.println("Invalid parameter types used!\n"+usage);
 			System.exit(1);
 		}
 	}

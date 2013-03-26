@@ -93,7 +93,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		logger = new LogManager(logfilename);
 		
 		if(restart) {
-			
+			//TODO Alguma coisa
 		} else {
 			File file = new File (logfilename);
 			file.delete();
