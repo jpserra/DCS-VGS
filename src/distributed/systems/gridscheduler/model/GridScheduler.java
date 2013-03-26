@@ -554,7 +554,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 			File file = new File(logfilename+"_readable");
 
-			// if file doesnt exists, then create it
+			// if file doesnt exist, then create it
 			if (!file.exists()) {
 				file.createNewFile();
 			}

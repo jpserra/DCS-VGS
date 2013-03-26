@@ -41,16 +41,16 @@ public class LogManager {
 		}
 	}
 
-	public ArrayList<LogEntry> readFromBinaryFile (){
+	public ArrayList<Object> readFromBinaryFile (){
 		File file = new File (filename);
-		ArrayList<LogEntry> recoveredLog = new ArrayList<LogEntry>();
+		ArrayList<Object> recoveredLog = new ArrayList<Object>();
 		if (file.exists ()){
 			ObjectInputStream ois = null;
 			try{
 				ois = new ObjectInputStream (new FileInputStream (filename));
 				while (true){
 
-					LogEntry j = (LogEntry)ois.readObject ();
+					Object j = (Object)ois.readObject ();
 					recoveredLog.add(j);
 				}
 			}catch (EOFException e){
@@ -72,13 +72,13 @@ public class LogManager {
 	 //Gets the Log ordered by clocks
 		public LogEntry[] readOrderedLog (){
 
-			ArrayList<LogEntry> unorderedLog = readFromBinaryFile();	
+			ArrayList<Object> unorderedLog = readFromBinaryFile();	
 			LogEntry[] orderedLog = new LogEntry[unorderedLog.size()];
 			LogEntry tmpLog = null;
 			boolean tradeMade, atLeastOne;
 	    if(unorderedLog.size() == 0)
 				return null;
-			int clockLenght = (unorderedLog.get(0)).getClock().length;
+			int clockLenght = ((LogEntry)unorderedLog.get(0)).getClock().length;
 			
 		//copy
 	    for (int i = 0; i < unorderedLog.size(); i++) {

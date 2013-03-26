@@ -19,6 +19,7 @@ public class Cluster implements Runnable {
 	private int port;
 	private int id;
 	private int nJobsToExecute;
+	private boolean restart;
 
 	// polling frequency, 10hz
 	private long pollSleep = 100;
@@ -42,7 +43,7 @@ public class Cluster implements Runnable {
 	 */
 	public Cluster(int id, int nEntities, int nodeCount, int nJobsToExecute, 
 			String hostname, int port, String gridSchedulerHostname, 
-			int gridSchedulerPort) {
+			int gridSchedulerPort, boolean restart) {
 		// Preconditions
 		assert(hostname != null) : "parameter 'hostname' cannot be null";
 		assert(port > 0) : "parameter 'port' cannot be inferior or equal to 0";
@@ -55,11 +56,12 @@ public class Cluster implements Runnable {
 		this.hostname = hostname;
 		this.port = port;
 		this.nJobsToExecute = nJobsToExecute;
+		this.restart = restart;
 
 		this.nodes = new ArrayList<Node>(nodeCount);
 
 		// Initialize the resource manager for this cluster
-		resourceManager = new ResourceManager(id, nEntities,this);
+		resourceManager = new ResourceManager(id, nEntities,this, restart);
 		resourceManager.connectToGridScheduler(gridSchedulerHostname,gridSchedulerPort);
 
 		// Initialize the nodes 
@@ -100,7 +102,7 @@ public class Cluster implements Runnable {
 	public int getID() {
 		return id;
 	}
-	
+
 	/**
 	 * Returns the hostname of the cluster
 	 * @return the hostname of the cluster
@@ -108,7 +110,7 @@ public class Cluster implements Runnable {
 	public String getName() {
 		return hostname;
 	}
-	
+
 	/**
 	 * Returns the port of the cluster
 	 * @return the port of the cluster
@@ -178,27 +180,56 @@ public class Cluster implements Runnable {
 
 	public static void main(String[] args) {
 
-		String usage = "Usage: Cluster <id> <nEntities> <nNodes> <nJobsToExecute> <hostname> <port> <GSHostname> <GSPort>";
+		String usage = "Usage: Cluster <id> <nEntities> <nNodes> <nJobsToExecute> <hostname> <port> <GSHostname> <GSPort> [-r]";
 
-		if(args.length != 7) {
+		if(args.length != 8 && args.length != 9) {
 			System.out.println(usage);
 			System.exit(1);
 		}
 
-		try {
-			new Cluster(
-					Integer.parseInt(args[0]), 
-					Integer.parseInt(args[1]),
-					Integer.parseInt(args[2]),
-					Integer.parseInt(args[3]),
-					args[4], 
-					Integer.parseInt(args[5]), 
-					args[6], 
-					Integer.parseInt(args[7]));
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println(usage);
-			System.exit(1);
+		if(args.length==9) {
+			if(args[8].equals("-r")) {
+				try {
+					System.out.println("Launching cluster in RESTART mode.");
+					new Cluster(
+							Integer.parseInt(args[0]), 
+							Integer.parseInt(args[1]),
+							Integer.parseInt(args[2]),
+							Integer.parseInt(args[3]),
+							args[4], 
+							Integer.parseInt(args[5]), 
+							args[6], 
+							Integer.parseInt(args[7]),
+							true);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.out.println(usage);
+					System.exit(1);
+				}
+			} else {
+				System.out.println(usage);
+				System.exit(1);
+			}
+		}
+
+		else if(args.length==8) {
+			try {
+				System.out.println("Launching cluster in NORMAL mode.");
+				new Cluster(
+						Integer.parseInt(args[0]), 
+						Integer.parseInt(args[1]),
+						Integer.parseInt(args[2]),
+						Integer.parseInt(args[3]),
+						args[4], 
+						Integer.parseInt(args[5]), 
+						args[6], 
+						Integer.parseInt(args[7]),
+						false);
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.out.println(usage);
+				System.exit(1);
+			}
 		}
 	}
 

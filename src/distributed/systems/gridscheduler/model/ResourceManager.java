@@ -77,7 +77,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * </DL>
 	 * @param cluster the cluster to wich this resource manager belongs.
 	 */
-	public ResourceManager(int id, int nEntities, Cluster cluster)	{
+	public ResourceManager(int id, int nEntities, Cluster cluster, boolean restart)	{
 		// preconditions
 		assert(cluster != null);
 
@@ -91,12 +91,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.logfilename += socketHostname+":"+socketPort+".log";
 
 		logger = new LogManager(logfilename);
-		// TODO Como é que se vai fazer quanto aos Restart's?
-		// Colocar uma flag para indicar se se trata de um restart ou não?
-		// Tratar as situações de forma diferente depois...
-		// delete older log files
-		File file = new File (logfilename);
-		file.delete();
+		
+		if(restart) {
+			
+		} else {
+			File file = new File (logfilename);
+			file.delete();
+		}
+		
 
 		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
 
