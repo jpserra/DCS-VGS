@@ -77,7 +77,7 @@ public class Job implements Serializable{
 	 */
 	@Override
 	public String toString() {
-		return "Job {ID = " + id + " "+status+ " }";
+		return "Job {ID = " + id +"}";
 	}
 
 	public InetSocketAddress getOriginalRM() {
