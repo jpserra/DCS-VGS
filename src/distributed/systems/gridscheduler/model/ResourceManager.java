@@ -312,9 +312,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				gsList.put(addr, 0);
 			}
 
-			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad);
-			replyMessage.setHostname(socketHostname);
-			replyMessage.setPort(socketPort);
+			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad,socketHostname,socketPort);
 			replyMessage.setLoad(jobQueue.size());
 
 			return replyMessage;
