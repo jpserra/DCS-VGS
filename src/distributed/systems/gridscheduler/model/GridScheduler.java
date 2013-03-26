@@ -552,7 +552,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		try {
 
 
-			File file = new File(logfilename);
+			File file = new File(logfilename+"_readable");
 
 			// if file doesnt exists, then create it
 			if (!file.exists()) {

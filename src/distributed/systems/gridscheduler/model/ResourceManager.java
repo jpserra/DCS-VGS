@@ -1,6 +1,9 @@
 package distributed.systems.gridscheduler.model;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Queue;
 import java.util.Timer;
@@ -480,8 +483,33 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		syncClientSocket.sendMessage();
 	}
 	
-	public LogEntry[] getLog(){
-		return logger.readOrderedLog();
+	public LogEntry[] getFullLog(){
+
+		LogEntry[] log = logger.readOrderedLog();
+		try {
+
+
+			File file = new File(logfilename+"_readable");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			for(LogEntry m : log)
+				bw.write(m.toString() + "\n");
+
+			bw.close();
+
+			System.out.println("Done");
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return log;
 	}
 
 

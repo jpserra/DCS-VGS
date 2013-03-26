@@ -79,9 +79,9 @@ public class Simulation implements Runnable {
 
 		
 		list = gs1.getFullLog();
-		for(Object j:  list){
-			System.out.println(j.toString());
-		}
+//		for(Object j:  list){
+//			System.out.println(j.toString());
+//		}
 		System.out.println("Simulation Finished, printing Log... GS2");
 
 		list = gs2.getFullLog();
@@ -95,7 +95,7 @@ public class Simulation implements Runnable {
 		
 		for (Cluster cluster : clusters){
 //			System.out.println("LOG DO RM "+ cluster.getID());
-//			logs = cluster.getResourceManager().getLog();
+//			logs = cluster.getResourceManager().getFullLog();
 //
 //			for(Object j: logs){
 //				System.out.println(j.toString());
