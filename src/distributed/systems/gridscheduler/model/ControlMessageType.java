@@ -25,6 +25,7 @@ public enum ControlMessageType {
 	JobArrivalAck,
 	JobStartedAck,
 	JobCompletedAck,
+	SimulationOver,
 
 	// both ways
 	AddJob,

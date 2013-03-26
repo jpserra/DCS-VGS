@@ -68,6 +68,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	// polling frequency, 1hz
 	private long pollSleep = 100;
+	
+	private GridScheduler handler;
 
 	// polling thread
 	private Thread pollingThread;
@@ -139,6 +141,13 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 				//TODO Enviar mensagem aos RM's conectados a indicar que a simulacao acabou.
 				System.out.println("GS <"+hostname+":"+port+">: A SIMULACAO ACABOU!");
+				ControlMessage message;
+				SynchronizedClientSocket syncClientSocket;
+				for(InetSocketAddress address : resourceManagerLoad.keySet()) {
+					message = new ControlMessage(ControlMessageType.SimulationOver,hostname, port);
+					syncClientSocket = new SynchronizedClientSocket(message, address, handler, timeout);
+					syncClientSocket.sendMessage();
+				}
 			}
 		}).start();
 	}
@@ -151,6 +160,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.nJobs = nJobs;
 		this.nEntities = nEntities;
 		this.logfilename += "GS_" + id +".log";
+		this.handler = this;
 
 		this.logger = new LogManager(logfilename);
 		// TODO Como  que se vai fazer quanto aos Restart's?
@@ -374,7 +384,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.AddJob) {	
 			resourceManagerLoad.remove(destinationAddress);
 			jobQueue.add(controlMessage.getJob());
-		} 
+		}
 
 		return null;
 	}
