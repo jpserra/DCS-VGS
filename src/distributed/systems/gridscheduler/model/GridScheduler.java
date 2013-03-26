@@ -281,8 +281,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			}
 
 			logger.writeToBinary(controlMessage,true);
-			
-			System.out.println("############################################# JOB ARRIVAL LOG -->"+controlMessage.getJob().getId());
 
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, controlMessage.getJob(), hostname, port));
 
@@ -316,7 +314,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				tempVC = vClock;
 			}
 			logger.writeToBinary(controlMessage,true);
-			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, hostname, port));
+			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, controlMessage.getJob(), hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobStartedAck, hostname, port);
 			msg.setClock(tempVC.getClock());
 			return msg;
@@ -336,7 +334,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			}
 			logger.writeToBinary(controlMessage,true);
 			jobsFinished++;
-			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobCompleted, hostname, port));
+			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobCompleted, controlMessage.getJob(), hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobCompletedAck, hostname, port);
 			msg.setClock(tempVC.getClock());
 			return msg;
