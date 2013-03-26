@@ -53,6 +53,12 @@ public class VectorialClock implements Serializable {
 			clock[i] = externalClock[i];
 		}
 	}
+	
+	public void setIndexValue(int id, int value) {
+		assert(id<clock.length);
+		assert(id>=0);
+		clock[id] = value;
+	}
 
 	public String toString(){
 		String s = "[ ";

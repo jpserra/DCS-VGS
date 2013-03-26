@@ -117,7 +117,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// in the case of a restart
 		if(restart) {
 			//TODO Read file to see last clock
-			
+			LogEntry[] orderedLog = logger.readOrderedLog();
+			vClock.setIndexValue(id, orderedLog[orderedLog.length-1].getClock()[id]);
+			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.getClock().toString());
 			// Send message to the GS provided in order to log the restart event.
 			ControlMessage cMessage =  new ControlMessage(ControlMessageType.Restart, hostname, port);
 			cMessage.setClock(vClock.getClock());
@@ -623,9 +625,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	public static void main(String[] args) {
 
-		String usage = "Usage: GridScheduler <id> <nEntities> <nJobs> <hostname> <port> [<otherGSHostname> <otherGSPort>] [-r]";
+		String usage = "Usage: GridScheduler <id> <nEntities> <nJobs> <hostname> <port> [<otherGSHostname> <otherGSPort> [-r]]";
 
-		if(args.length < 5 || args.length > 8) {
+		if(args.length != 5 && args.length != 7 && args.length != 8) {
 			System.out.println(usage);
 			System.exit(1);
 		}
@@ -639,21 +641,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						args[3], 
 						Integer.parseInt(args[4]),
 						false);
-			} else if (args.length == 6) {
-				if(args[5].equals("-r")) {
-					new GridScheduler(
-							Integer.parseInt(args[0]), 
-							Integer.parseInt(args[1]),
-							Integer.parseInt(args[2]),
-							args[3], 
-							Integer.parseInt(args[4]),
-							true);
-				} else {
-					System.out.println("Wrong flag!\n"+usage);
-					System.exit(1);
-				}
-			}
-			else if (args.length == 7) {
+			} else if (args.length == 7) {
 				new GridScheduler(
 						Integer.parseInt(args[0]), 
 						Integer.parseInt(args[1]),
