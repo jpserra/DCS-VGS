@@ -340,8 +340,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, timeout);
 			syncClientSocket.sendMessage();
 			scheduleJobs();
-
-
+			
 			return null;
 
 		}
@@ -354,20 +353,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			return null;
 		}
-
-		/*
-		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival)
-		{			
-			//Logs
-
-			ControlMessage replyMessage = new ControlMessage(ControlMessageType.GSLogJobArrivalAck);
-			replyMessage.setUrl(socketURL);
-			replyMessage.setPort(socketPort);
-			//syncSocket.sendMessage(replyMessage, controlMessage.getInetAddress());	
-			//return replyMessage;
-			return null;
-
-		}*/
+		
+		if (controlMessage.getType() == ControlMessageType.JobArrivalAck ||
+				controlMessage.getType() == ControlMessageType.JobCompletedAck ||
+				controlMessage.getType() == ControlMessageType.JobStartedAck) {
+			vClock.updateClock(controlMessage.getClock(), identifier);
+		}
+		
 
 		return null;
 
@@ -416,7 +408,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		else if (controlMessage.getType() == ControlMessageType.JobArrival ||
 				controlMessage.getType() == ControlMessageType.JobStarted ||
-				controlMessage.getType() == ControlMessageType.JobStarted) {
+				controlMessage.getType() == ControlMessageType.JobCompleted) {
 			// Send log message to a randomly choosen GS.
 			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, getRandomGS() ,this, timeout);
 			s.sendMessage();
