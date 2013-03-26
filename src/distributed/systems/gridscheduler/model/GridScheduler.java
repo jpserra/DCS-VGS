@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import distributed.systems.core.IMessageReceivedHandler;
@@ -59,6 +61,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	// a hashmap linking each resource manager to an estimated load
 	private ConcurrentHashMap<InetSocketAddress, Integer> resourceManagerLoad;
+	
+	private Set<Long> finishedJobs;
 
 	private long checkThreadPollSleep = 1000;
 
@@ -158,6 +162,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		gridSchedulersList = new ConcurrentHashMap<InetSocketAddress,Integer>();
 		gridSchedulersList.put(new InetSocketAddress(hostname, port),0);
+		finishedJobs = new HashSet<Long>();
 
 		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
@@ -300,10 +305,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobStarted) {
-			synchronized(this) {
-				vClock.updateClock(controlMessage.getClock());
-				tempVC = vClock;
-			}
+			// Update the clock and store it in a temporary one.
+			tempVC.setClock(vClock.updateClock(controlMessage.getClock()));
 			logger.writeToBinary(controlMessage,true);
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, controlMessage.getJob(), hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobStartedAck, hostname, port);
@@ -319,12 +322,12 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
-			synchronized(this) {
-				vClock.updateClock(controlMessage.getClock());
-				tempVC = vClock;
-			}
+			// Update the clock and store it in a temporary one.
+			tempVC.setClock(vClock.updateClock(controlMessage.getClock()));
 			logger.writeToBinary(controlMessage,true);
-			jobsFinished++;
+			if(finishedJobs.add(controlMessage.getJob().getId())) {
+				jobsFinished++;
+			}
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobCompleted, controlMessage.getJob(), hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobCompletedAck, hostname, port);
 			msg.setClock(tempVC.getClock());
