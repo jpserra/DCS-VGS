@@ -61,7 +61,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private ConcurrentHashMap<InetSocketAddress, Integer> resourceManagerLoad;
 
 	private long checkThreadPollSleep = 1000;
-	
+
 	// polling frequency, 1hz
 	private long pollSleep = 100;
 
@@ -166,7 +166,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		syncSocket = new SynchronizedSocket(hostname, port);
 		syncSocket.addMessageReceivedHandler(this);
-		
+
 		launchCheckThread();
 
 	}
@@ -193,7 +193,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		ret = jobQueue.size();
 		return ret;
 	}
-	
+
 	public String getLogFileName() {
 		return logfilename;
 	}
@@ -267,18 +267,22 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
 			// Tries to add the RM to the list if this was not there already.
 			if(!resourceManagerLoad.containsKey(controlMessage.getInetAddress())) {
-					resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
+				resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
 			}
 			vClock.updateClock(controlMessage.getClock(), identifier);
 			jobQueue.add(controlMessage.getJob());
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobArrival) {			
-
-			vClock.updateClock(controlMessage.getClock(), identifier);
-			tempVC = vClock;
+			
+			synchronized(this) {
+				vClock.updateClock(controlMessage.getClock(), identifier);
+				tempVC = vClock;
+			}
 
 			logger.writeToBinary(controlMessage,true);
+			
+			System.out.println("############################################# JOB ARRIVAL LOG -->"+controlMessage.getJob().getId());
 
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobArrival, controlMessage.getJob(), hostname, port));
 
@@ -307,8 +311,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobStarted) {
-			vClock.updateClock(controlMessage.getClock(), identifier);
-			tempVC = vClock;
+			synchronized(this) {
+				vClock.updateClock(controlMessage.getClock(), identifier);
+				tempVC = vClock;
+			}
 			logger.writeToBinary(controlMessage,true);
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobStarted, hostname, port));
 			msg = new ControlMessage(ControlMessageType.JobStartedAck, hostname, port);
@@ -324,8 +330,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
-			vClock.updateClock(controlMessage.getClock(), identifier);
-			tempVC = vClock;
+			synchronized(this) {
+				vClock.updateClock(controlMessage.getClock(), identifier);
+				tempVC = vClock;
+			}
 			logger.writeToBinary(controlMessage,true);
 			jobsFinished++;
 			synchronizeWithAllGS(new ControlMessage(ControlMessageType.GSLogJobCompleted, hostname, port));
@@ -351,12 +359,12 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return prepareMessageToSend(new ControlMessage(ControlMessageType.ResourceManagerJoinAck, hostname, port));
 		}
 
-		
+
 
 		return null;
 
 	}
-	
+
 	@Override
 	public ControlMessage onConnectExceptionThrown(Message message,
 			InetSocketAddress destinationAddress, boolean requiresRepsonse) {
@@ -367,15 +375,15 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 			if(checkGSFailures(destinationAddress)) {
 				SynchronizedClientSocket client = new SynchronizedClientSocket(controlMessage, destinationAddress, this, timeout);
-					client.sendMessage();
+				client.sendMessage();
 			}
 		}
-		
+
 		if (controlMessage.getType() == ControlMessageType.AddJob) {	
 			resourceManagerLoad.remove(destinationAddress);
 			jobQueue.add(controlMessage.getJob());
 		} 
-	
+
 		return null;
 	}
 
@@ -424,7 +432,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 		return true;
 	}
-	
+
 	// finds the least loaded resource manager and returns its url
 	private InetSocketAddress getLeastLoadedRM() {
 		InetSocketAddress ret = null; 
@@ -537,28 +545,28 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	 * Returns the entire history of messages saves on the Grid Scheduler Log
 	 */
 	public ControlMessage[] getFullLog(){
-		
+
 		ControlMessage[] log = logger.readOrderedLogMessages();
 		try {
-			 
- 
+
+
 			File file = new File(logfilename);
- 
+
 			// if file doesnt exists, then create it
 			if (!file.exists()) {
 				file.createNewFile();
 			}
- 
+
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
-			
+
 			for(ControlMessage m : log)
-			bw.write(m.toString() + "\n");
-			
+				bw.write(m.toString() + "\n");
+
 			bw.close();
- 
+
 			System.out.println("Done");
- 
+
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
