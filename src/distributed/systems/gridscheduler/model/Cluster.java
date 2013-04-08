@@ -71,7 +71,10 @@ public class Cluster implements Runnable {
 			n.addNodeEventHandler(resourceManager);
 			nodes.add(n);
 		}
-		/*
+		//TODO Dentro desta thread, tem de verificar se restart = true, e se sim, ir ao log, 
+		//buscar os trabalhos j‡ gerados para apenas gerar os que ainda n‹o foram enviados a um grid Scheduler
+		
+		
 		Thread createJobs = new Thread(new Runnable() {
 			public void run() {
 				int jobId = id*100000;
@@ -89,7 +92,7 @@ public class Cluster implements Runnable {
 			}
 		});
 		createJobs.start();
-*/
+
 		// Start the polling thread
 		running = true;
 		pollingThread = new Thread(this);
