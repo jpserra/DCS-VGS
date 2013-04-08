@@ -16,8 +16,6 @@ public enum ControlMessageType {
 	JobArrival,
 	JobStarted,
 	JobCompleted,
-	
-
 
 	// from GS to RM
 	RequestLoad,
@@ -46,9 +44,7 @@ public enum ControlMessageType {
 	GSLogRestart,
 	GSLogRestartAck,
 
-
 	// GS to GS or GS to RM
 	ReplyGSList
-
 
 }

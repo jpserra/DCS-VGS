@@ -27,9 +27,6 @@ import distributed.systems.core.VectorialClock;
  */
 public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
-	//General Log containing every happening
-	//private ArrayList<LogEntry> log;
-	private LogEntry logEntry;
 	private String logfilename = "";
 	private LogManager logger;
 
@@ -127,7 +124,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			// Send message to the GS provided in order to log the restart event.
 			ControlMessage cMessage =  new ControlMessage(ControlMessageType.Restart, hostname, port);
 			cMessage.setClock(vClock.getClock());
-			// Only on GS in the list at the time.
+			// Only one GS in the list at the time.
 			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this, timeout);
 			syncClientSocket.sendMessage();
 		} else {
@@ -372,7 +369,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
-			// Update the clock and store it in a temporary one.
+			// Prepare the messages to be sent.
 			synchronized (this) {
 				controlMessage.setClock(vClock.updateClock(controlMessage.getClock()));
 				msgLog = new ControlMessage(ControlMessageType.GSLogJobCompleted, controlMessage.getJob(), hostname, port, vClock.getClock());
@@ -603,24 +600,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		} catch (InterruptedException ex) {
 			assert(false) : "Grid scheduler stopPollThread was interrupted";
 		}
-	}
-
-	//TODO Method called when a message arrives
-	private synchronized void logMessage(ControlMessage message) {
-
-		if(message.getType() != ControlMessageType.ReplyLoad && message.getType() != ControlMessageType.GSSendLogEntry ){
-			this.logEntry = new LogEntry(message);
-			//log.add(this.logEntry);
-
-			ControlMessage msg = new ControlMessage(ControlMessageType.GSSendLogEntry, this.logEntry, hostname, port);
-			SynchronizedClientSocket syncClientSocket;
-			for(InetSocketAddress address : gridSchedulersList.keySet()) {
-				if (address.getHostName() == this.getHostname() && address.getPort() == this.getPort()) continue; //Doe
-				System.out.println("Sending logEntry from: "+ this.hostname +":"+ this.port +"to:" + address.toString());
-				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
-				syncClientSocket.sendMessage();
-			}		
-		}	
 	}
 
 	/**
