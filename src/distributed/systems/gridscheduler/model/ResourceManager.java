@@ -494,7 +494,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		LogEntry[] log = logger.readOrderedLog();
 		try {
 
-
 			File file = new File(logfilename+"_readable");
 
 			// if file doesnt exists, then create it
@@ -505,8 +504,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
 
-			for(LogEntry m : log)
+			for(LogEntry m : log) {
 				bw.write(m.toString() + "\n");
+			}
 
 			bw.close();
 
@@ -515,8 +515,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
 		return log;
+		
 	}
-
 
 }

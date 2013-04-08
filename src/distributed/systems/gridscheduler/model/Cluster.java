@@ -1,7 +1,9 @@
 package distributed.systems.gridscheduler.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 
@@ -20,6 +22,8 @@ public class Cluster implements Runnable {
 	private int id;
 	private int nJobsToExecute;
 	private boolean restart;
+	
+	private Set<Long> finishedJobs;
 
 	// polling frequency, 10hz
 	private long pollSleep = 100;
@@ -71,15 +75,33 @@ public class Cluster implements Runnable {
 			n.addNodeEventHandler(resourceManager);
 			nodes.add(n);
 		}
+		
 		//TODO Dentro desta thread, tem de verificar se restart = true, e se sim, ir ao log, 
 		//buscar os trabalhos j‡ gerados para apenas gerar os que ainda n‹o foram enviados a um grid Scheduler
+		if(restart) {
+			
+			//TODO Ler o Log e criar a estrutura de dados necessária
+			
+			
+			//TODO Escolher os ID's dos trabalhos que já não precisam de ser gerados e colocar num Set
+			//  Critérios: 
+			//    - Jobs que tenham sido delegados com sucesso (JobAddAck deve logar este evento)
+			//    - Jobs que tenham completado nesta máquina (um evento é logado quando acontece)
+			// Estes dois eventos devem ser diferentes - verificar!
+			finishedJobs = new HashSet<Long>();
+			// ...
+		}
 		
+		//TODO Solução para esta thread deve passar por replicar o código
+		// e lançar a thread dentro ou fora do if lá em cima.
+		// Verificar a flag de restart a cada iteração não é muito bom.
 		
 		Thread createJobs = new Thread(new Runnable() {
 			public void run() {
 				int jobId = id*100000;
 				for(int i = 0; i < nJobsToExecute; i++) {
-					Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
+					jobId++;
+					Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
 					getResourceManager().addJob(job);
 					// Sleep a while before creating a new job
 					try {
