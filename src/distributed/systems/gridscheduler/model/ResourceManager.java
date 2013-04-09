@@ -47,6 +47,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private VectorialClock vClock;
 	private LogManager logger;
 
+	
+
 	private String logfilename = "";
 
 	// timeout to recieve an ACK (response) message
@@ -168,7 +170,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			jobQueue.add(job);
 			sendJobEvent(job, ControlMessageType.JobArrival);
 
-			LogEntry e = new LogEntry(job, "Job Arrived", vClock.getClock());
+			LogEntry e = new LogEntry(job, "JOB_ARRIVAL", vClock.getClock());
 			logger.writeToBinary(e,true);
 			scheduleJobs();
 		}
@@ -198,7 +200,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		while ( ((waitingJob = getWaitingJob()) != null) && ((freeNode = cluster.getFreeNode()) != null) ) {
 			freeNode.startJob(waitingJob);
 			sendJobEvent(waitingJob,ControlMessageType.JobStarted);
-			LogEntry e = new LogEntry(waitingJob, "Job Started", vClock.getClock());
+			LogEntry e = new LogEntry(waitingJob, "JOB_STARTED", vClock.getClock());
 			logger.writeToBinary(e,true);
 
 		}
@@ -215,7 +217,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// try to contact a GS in order to inform that a job was completed locally
 		sendJobEvent(job,ControlMessageType.JobCompleted);
 		// write in the log that the job was executed
-		LogEntry e = new LogEntry(job, "Job Finished", vClock.getClock());
+		LogEntry e = new LogEntry(job, "JOB_COMPLETED", vClock.getClock());
 		logger.writeToBinary(e,true);
 		// job finished, remove it from our pool
 		jobQueue.remove(job);
@@ -353,6 +355,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if(t != null) t.cancel();
+			
+			LogEntry e = new LogEntry(controlMessage);
+			logger.writeToBinary(e,true);
 
 			return null;
 		}
@@ -488,6 +493,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, timeout);
 		syncClientSocket.sendMessage();
 	}
+	
+	
 	
 	public LogEntry[] getFullLog(){
 

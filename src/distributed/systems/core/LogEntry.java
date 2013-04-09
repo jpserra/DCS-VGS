@@ -43,6 +43,10 @@ public class LogEntry implements Serializable {
 			this.setEvent("JOB_COMPLETED");
 			break;
 			
+		case "AddJobAck":
+			this.setEvent("JOB_SENT");
+			break;
+			
 			default: 		this.setEvent(message.getType().toString());
 
 		}
