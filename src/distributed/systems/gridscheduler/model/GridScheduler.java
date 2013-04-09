@@ -242,13 +242,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		SynchronizedClientSocket syncClientSocket;
 		ControlMessage controlMessage = (ControlMessage)message;
-		//VectorialClock tempVC = new VectorialClock(nEntities);
 		ControlMessage msg = null;
 		ControlMessage msgOpt = null;
 		ControlMessage msgLog = null;
-
-		//TODO Sincronizacao do log... Ver as mensagens que tem de ser logadas.
-		// Chamar um metodo que faca isto nos locais adequados.
 
 		if(controlMessage.getType() != ControlMessageType.ReplyLoad) {
 			System.out.println("[GS "+hostname+":"+port+"] Message received: " + controlMessage.getType()+"\n");
@@ -384,7 +380,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			synchronizeWithAllGS(msgLog);
 			
 			// Check if the simulation ended
-			// TODO Move this upon the recieval of the ACK?
 			if(finishedJobs.add(controlMessage.getJob().getId())) {
 				jobsFinished++;
 			}
@@ -479,7 +474,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		ControlMessage controlMessage = (ControlMessage)message;
 
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
-			//TODO Maneira de adicionar o RM de novo à lista de possiveis destinatarios?
 			resourceManagerLoad.remove(destinationAddress);
 			jobQueue.add(controlMessage.getJob());
 		} 

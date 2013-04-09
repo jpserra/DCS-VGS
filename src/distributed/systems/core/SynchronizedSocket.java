@@ -52,7 +52,7 @@ public class SynchronizedSocket extends Thread {
 				s.close();
 
 			} catch (IOException | ClassNotFoundException e) {
-				// TODO Fazer alguma coisa aqui? O envio pode falhar...
+				//TODO Pode falhar aqui?
 				e.printStackTrace();
 			}	
 		}
