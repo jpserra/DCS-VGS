@@ -101,8 +101,10 @@ public class Cluster implements Runnable {
 					int jobId = id*100000;
 					for(int i = 0; i < nJobsToExecute; i++) {
 						jobId++;
-						if(finishedJobs.contains(jobId))
+						if(finishedJobs.contains(jobId)) {
+							System.out.println("|---IGNORED JOB---|: "+jobId);
 							continue;
+						}
 						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job

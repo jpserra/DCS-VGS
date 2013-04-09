@@ -81,29 +81,27 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 */
 	public ResourceManager(int id, int nEntities, Cluster cluster, boolean restart)	{
 		// preconditions
+		assert(id >= 0);
+		assert(nEntities > 0);
 		assert(cluster != null);
 
-		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.cluster = cluster;
 		this.socketHostname = cluster.getName();
 		this.socketPort = cluster.getPort();
 		this.identifier = id;
 		this.nEntities = nEntities;
+		
+		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += socketHostname+":"+socketPort+".log";
-
-		logger = new LogManager(logfilename);
+		this.logger = new LogManager(logfilename);
 		
-		if(restart) {
-			//TODO Alguma coisa
-		} else {
+		if(!restart) {
 			File file = new File (logfilename);
 			file.delete();
 		}
 		
-
 		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
-
 		jobTimers = new ConcurrentHashMap<Long, Timer>();
 
 		running = true;
@@ -125,7 +123,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		@Override
 		public void run() {
-			System.out.println("TIME OUT!");
 			handler.onReadExceptionThrown(message, destinationAddress);
 		}
 	}
@@ -169,7 +166,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		} else { // otherwise store it in the local queue
 			jobQueue.add(job);
 			sendJobEvent(job, ControlMessageType.JobArrival);
-
+			//TODO Check this
 			LogEntry e = new LogEntry(job, "JOB_ARRIVAL", vClock.getClock());
 			logger.writeToBinary(e,true);
 			scheduleJobs();
@@ -285,7 +282,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		ControlMessage controlMessage = (ControlMessage)message;
 
 		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
-			System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
+			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
 		}
 
 		// When Resource manager receives the list of all GS available from the GS that was given when this RM was initialized. The RM will try to join each of the GS
@@ -296,7 +293,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 			SynchronizedClientSocket syncClientSocket;
-			System.out.println("GSList:" + gsList);
+			//System.out.println("GSList:" + gsList);
 			for(InetSocketAddress address : gsList.keySet()) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketHostname, socketPort);
 				msg.setClock(vClock.getClock());
@@ -513,8 +510,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 			bw.close();
-
-			System.out.println("Done");
 
 		} catch (IOException e) {
 			e.printStackTrace();

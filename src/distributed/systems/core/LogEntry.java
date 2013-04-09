@@ -59,7 +59,7 @@ public class LogEntry implements Serializable {
 	public LogEntry(Job j, String evnt, int[] clock){
 		this.setOrigin(null);
 		this.setEvent(evnt);
-			this.setJob(j);
+		this.setJob(j);
 		this.setClock(clock);
 	}
 //
