@@ -397,7 +397,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		ControlMessage controlMessage = (ControlMessage)message;
 
-		// RM only recieves messages from GS's.
+		// RM only receives messages from GS's.
 		// When a GS has a certain amount of failures, it will be removed from the list.
 		checkGSFailures(destinationAddress);
 
@@ -421,12 +421,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		else if (controlMessage.getType() == ControlMessageType.JobArrival ||
 				controlMessage.getType() == ControlMessageType.JobStarted ||
 				controlMessage.getType() == ControlMessageType.JobCompleted) {
-			// Send log message to a randomly choosen GS.
+			// Send log message to a randomly chosen GS.
 			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, getRandomGS() ,this, timeout);
 			s.sendMessage();
 		}
 
-		//Always tries to send to send the same message again.
 		return null;
 
 	}
@@ -493,8 +492,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, timeout);
 		syncClientSocket.sendMessage();
 	}
-	
-	
 	
 	public LogEntry[] getFullLog(){
 

@@ -23,7 +23,7 @@ public class Cluster implements Runnable {
 	private int id;
 	private int nJobsToExecute;
 	private boolean restart;
-	
+
 	private Set<Long> finishedJobs;
 
 	// polling frequency, 10hz
@@ -62,7 +62,6 @@ public class Cluster implements Runnable {
 		this.port = port;
 		this.nJobsToExecute = nJobsToExecute;
 		this.restart = restart;
-
 		this.nodes = new ArrayList<Node>(nodeCount);
 
 		// Initialize the resource manager for this cluster
@@ -76,69 +75,67 @@ public class Cluster implements Runnable {
 			n.addNodeEventHandler(resourceManager);
 			nodes.add(n);
 		}
-		
+
 		//TODO Dentro desta thread, tem de verificar se restart = true, e se sim, ir ao log, 
 		//buscar os trabalhos j‡ gerados para apenas gerar os que ainda n‹o foram enviados a um grid Scheduler
 		if(restart) {
-			
+
+			String aux = null;
 			LogEntry[] log = this.resourceManager.getFullLog();
-			
+
 			finishedJobs = new HashSet<Long>();
 			//TODO Escolher os ID's dos trabalhos que já não precisam de ser gerados e colocar num Set
 			//  Critérios: 
 			//    - Jobs que tenham sido delegados com sucesso (JobAddAck deve logar este evento)
 			//    - Jobs que tenham completado nesta máquina (um evento é logado quando acontece)
 			// Estes dois eventos devem ser diferentes - verificar!
-			for(LogEntry l : log)
-				if(l.getEvent() == "JOB_COMPLETED" || l.getEvent() == "JOB_SENT")
-								finishedJobs.add(l.getJob().getId());
-		
-		
-		
-		//TODO Solução para esta thread deve passar por replicar o código
-		// e lançar a thread dentro ou fora do if lá em cima.
-		// Verificar a flag de restart a cada iteração não é muito bom.
-		
-		Thread createJobs = new Thread(new Runnable() {
-			public void run() {
-				int jobId = id*100000;
-				for(int i = 0; i < nJobsToExecute; i++) {
-					jobId++;
-					if(finishedJobs.contains(jobId))
-						continue;
-					Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
-					getResourceManager().addJob(job);
-					// Sleep a while before creating a new job
-					try {
-						Thread.sleep(20L);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}	
-				}
+			for(LogEntry l : log) {
+				aux = l.getEvent();
+				if(aux.equals("JOB_COMPLETED") || aux.equals("JOB_SENT"))
+					finishedJobs.add(l.getJob().getId());
 			}
-		});
-		createJobs.start();
+
+			// Launch the thread with th JobID verification upon generation.
+			Thread createJobs = new Thread(new Runnable() {
+				public void run() {
+					int jobId = id*100000;
+					for(int i = 0; i < nJobsToExecute; i++) {
+						jobId++;
+						if(finishedJobs.contains(jobId))
+							continue;
+						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
+						getResourceManager().addJob(job);
+						// Sleep a while before creating a new job
+						try {
+							Thread.sleep(20L);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}	
+					}
+				}
+			});
+			createJobs.start();
 		}
-		else{
-		Thread createJobs = new Thread(new Runnable() {
-			public void run() {
-				int jobId = id*100000;
-				for(int i = 0; i < nJobsToExecute; i++) {
-					jobId++;
-					Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
-					getResourceManager().addJob(job);
-					// Sleep a while before creating a new job
-					try {
-						Thread.sleep(20L);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}	
+		// Launch the thread normallly.
+		else {
+			Thread createJobs = new Thread(new Runnable() {
+				public void run() {
+					int jobId = id*100000;
+					for(int i = 0; i < nJobsToExecute; i++) {
+						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
+						getResourceManager().addJob(job);
+						// Sleep a while before creating a new job
+						try {
+							Thread.sleep(20L);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}	
+					}
 				}
-			}
-		});
-		createJobs.start();
+			});
+			createJobs.start();
 		}
 
 		// Start the polling thread

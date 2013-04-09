@@ -11,12 +11,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 
 public class LogManager {
-	
+
 	private String filename;
-	
+
 	public LogManager(String filename){
 		this.filename= filename;
-		
+
 	}
 
 	public synchronized void writeToBinary (Object obj, boolean append){
@@ -25,7 +25,7 @@ public class LogManager {
 
 		try{
 			if (!file.exists () || !append) 
-			out = new ObjectOutputStream (new FileOutputStream (filename));
+				out = new ObjectOutputStream (new FileOutputStream (filename));
 			else out = new AppendableObjectOutputStream (new FileOutputStream (filename, append));
 			out.writeObject(obj);
 			out.flush ();
@@ -67,49 +67,49 @@ public class LogManager {
 		}
 		return recoveredLog;
 	}
-	
+
 	//FOR RESOURCE MANAGERS!
-	 //Gets the Log ordered by clocks
-		public LogEntry[] readOrderedLog (){
+	//Gets the Log ordered by clocks
+	public LogEntry[] readOrderedLog (){
 
-			ArrayList<LogEntry> unorderedLog = readFromBinaryFile();	
-			LogEntry[] orderedLog = new LogEntry[unorderedLog.size()];
-			LogEntry tmpLog = null;
-			boolean tradeMade, atLeastOne;
-	    if(unorderedLog.size() == 0)
-				return null;
-			int clockLenght = (unorderedLog.get(0)).getClock().length;
-			
+		ArrayList<LogEntry> unorderedLog = readFromBinaryFile();	
+		LogEntry[] orderedLog = new LogEntry[unorderedLog.size()];
+		LogEntry tmpLog = null;
+		boolean tradeMade, atLeastOne;
+		if(unorderedLog.size() == 0)
+			return null;
+		int clockLenght = (unorderedLog.get(0)).getClock().length;
+
 		//copy
-	    for (int i = 0; i < unorderedLog.size(); i++) {
-	        orderedLog[i] = (LogEntry)unorderedLog.get(i);
-	    }
-				
-	    do {
-	      tradeMade = false;
-	      for (int i = 0; i < orderedLog.length - 1; i++) {
-	          for (int j = 0; j < clockLenght; j++) {
-	              atLeastOne = false;
-	              if (orderedLog[i].getClock()[j] >= orderedLog[i + 1].getClock()[j]) {
-	                  if(orderedLog[i].getClock()[j] > orderedLog[i + 1].getClock()[j])
-	                      atLeastOne = true;
-	                  if (j == clockLenght-1 && atLeastOne) {
-	                      tmpLog = orderedLog[i];
-	                      orderedLog[i] = orderedLog[i + 1];
-	                      orderedLog[i + 1] = tmpLog;
-	                      tradeMade = true;
-	                  }
-	              } else {
-	                  j=clockLenght;
-	              }
-	          }
-	      }
-	  } while (tradeMade);
-
-	  return orderedLog;
+		for (int i = 0; i < unorderedLog.size(); i++) {
+			orderedLog[i] = (LogEntry)unorderedLog.get(i);
 		}
 
-	
+		do {
+			tradeMade = false;
+			for (int i = 0; i < orderedLog.length - 1; i++) {
+				for (int j = 0; j < clockLenght; j++) {
+					atLeastOne = false;
+					if (orderedLog[i].getClock()[j] >= orderedLog[i + 1].getClock()[j]) {
+						if(orderedLog[i].getClock()[j] > orderedLog[i + 1].getClock()[j])
+							atLeastOne = true;
+						if (j == clockLenght-1 && atLeastOne) {
+							tmpLog = orderedLog[i];
+							orderedLog[i] = orderedLog[i + 1];
+							orderedLog[i + 1] = tmpLog;
+							tradeMade = true;
+						}
+					} else {
+						j=clockLenght;
+					}
+				}
+			}
+		} while (tradeMade);
+
+		return orderedLog;
+	}
+
+
 	private static class AppendableObjectOutputStream extends ObjectOutputStream {
 		public AppendableObjectOutputStream(OutputStream out) throws IOException {
 			super(out);
@@ -120,6 +120,6 @@ public class LogManager {
 			reset();
 		}
 	}
-	
-	
+
+
 }
