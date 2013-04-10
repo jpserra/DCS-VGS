@@ -280,6 +280,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(message != null) : "parameter 'message' cannot be null";
 
 		ControlMessage controlMessage = (ControlMessage)message;
+		SynchronizedClientSocket syncClientSocket;
 
 		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
 			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
@@ -290,17 +291,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		{
 			for (InetSocketAddress address:controlMessage.getGridSchedulersList()){
 				gsList.put(address, 0);
-			}
-
-			SynchronizedClientSocket syncClientSocket;
-			//System.out.println("GSList:" + gsList);
-			for(InetSocketAddress address : gsList.keySet()) {
 				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketHostname, socketPort);
 				msg.setClock(vClock.getClock());
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 				syncClientSocket.sendMessage();
 			}
-
 		}
 
 		// ResourceManager receives ack that the GS added them to theirs GS list.
@@ -312,12 +307,18 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.RequestLoad)
 		{
 			// RM updates the GS list.
-			for(InetSocketAddress addr : controlMessage.getGridSchedulersList()) {
-				gsList.put(addr, 0);
+			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
+				if(!gsList.containsKey(address)) {
+					ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketHostname, socketPort);
+					msg.setClock(vClock.getClock());
+					syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
+					syncClientSocket.sendMessage();
+				}
+				gsList.put(address, 0);
 			}
 
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad,socketHostname,socketPort);
-			replyMessage.setLoad((cluster.getNodeCount() + MAX_QUEUE_SIZE)-jobQueue.size());
+			replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size())/gsList.size());
 
 			return replyMessage;
 		}
@@ -341,7 +342,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				msg.setClock(vClock.getClock());
 			}
 
-			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, timeout);
+			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, timeout);
 			syncClientSocket.sendMessage();
 			scheduleJobs();
 			
@@ -367,11 +368,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			vClock.updateClock(controlMessage.getClock());
 		}
 		
-		//TODO Ver aqui! Fim de simulacao...
-		// Sockets abertos...Problema?
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			System.out.println("SIMULATION OVER:" + controlMessage.getUrl() + " " + controlMessage.getPort());
 			System.out.println("Shutting down...");
+			//TODO Preparar o LOG (ficheiro texto)
 			System.exit(0);
 		}
 		
