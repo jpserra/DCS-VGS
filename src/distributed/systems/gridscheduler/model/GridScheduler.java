@@ -220,14 +220,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					int i = 0;
 					String print = "";
 					for(InetSocketAddress rm : resourceManagerLoad.keySet()) {
-						print += String.format(rm.getHostName()+":"+rm.getPort()+"[%3d+]  ",resourceManagerLoad.get(rm));
+						print += String.format(rm.getHostName()+":"+rm.getPort()+"[%3d]  ",resourceManagerLoad.get(rm));
 						i++;
-						if(i%5==0) {
+						if(i%10==0) {
 							i=0;
 							print += "\n";
 						}
 					}
-					System.out.println(print+"\n");
+					System.out.println(print+"\n Jobs finished: "+jobsFinished);
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
