@@ -82,10 +82,16 @@ public class SynchronizedClientSocket extends Thread {
 				in.close();
 
 			} catch (SocketTimeoutException e) {
-				System.out.println("Timeout!!!!");
+				System.out.println("TIMEOUT! "+cMessage.getType()+
+						" from "+cMessage.getUrl()+":"+cMessage.getPort()+
+						"to "+address.getHostName()+":"+address.getPort());
 				message = handler.onReadExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (IOException e) {
+				System.out.println("IOException! "+cMessage.getType()+
+						" from "+cMessage.getUrl()+":"+cMessage.getPort()+
+						"to "+address.getHostName()+":"+address.getPort());
+				message = handler.onReadExceptionThrown(cMessage, address);
 				message = handler.onReadExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
@@ -93,6 +99,7 @@ public class SynchronizedClientSocket extends Thread {
 			}
 		}
 		else{
+			// Give the server time to read the data from the socket
 			while(socket.isConnected())
 			try {
 				Thread.sleep(10);
@@ -101,7 +108,6 @@ public class SynchronizedClientSocket extends Thread {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-
 		}
 
 		try {
