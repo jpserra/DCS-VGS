@@ -5,6 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -547,17 +550,20 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private InetSocketAddress getLeastLoadedRM() {
 		InetSocketAddress ret = null; 
 		int maxFreeNodes = 0;
-
+		Set<InetSocketAddress> rm = new HashSet<InetSocketAddress>();
 		// loop over all resource managers, and pick the one with the lowest load
 		for (InetSocketAddress key : resourceManagerLoad.keySet())
 		{
 			if (resourceManagerLoad.get(key) > maxFreeNodes)
 			{
-				ret = key;
 				maxFreeNodes = resourceManagerLoad.get(key);
+				rm.clear();
+				rm.add(key);
+			} else if(resourceManagerLoad.get(key) == maxFreeNodes) {
+				rm.add(key);
 			}
 		}
-
+		ret = (InetSocketAddress)rm.toArray()[(int)(Math.random() * ((rm.size()-1) + 1))];
 		return ret;		
 	}
 
