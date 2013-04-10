@@ -214,7 +214,16 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		Thread createJobs = new Thread(new Runnable() {
 			public void run() {
 				while(true) {
-					System.out.println(resourceManagerLoad.toString());
+					int i = 0;
+					for(InetSocketAddress rm : resourceManagerLoad.keySet()) {
+						System.out.printf(rm.getHostName()+":"+rm.getPort()+"[%3d+]  ",resourceManagerLoad.get(rm));
+						i++;
+						if(i%5==0) {
+							i=0;
+							System.out.println();
+						}
+					}
+					System.out.println();
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
@@ -566,7 +575,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	public void run() {
 		
 		SynchronizedClientSocket syncClientSocket = null;
-		int freeNodes;
+		int freeNodes = 0;
 		
 		while (running) {
 			// send a message to each resource manager, requesting its load
