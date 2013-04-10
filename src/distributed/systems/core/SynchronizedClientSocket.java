@@ -6,7 +6,6 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-
 import distributed.systems.gridscheduler.model.ControlMessage;
 import distributed.systems.gridscheduler.model.SyncLog;
 
@@ -63,6 +62,8 @@ public class SynchronizedClientSocket extends Thread {
 			requiresRepsonse = false;
 			e.printStackTrace();
 		}
+		
+		
 
 		// If there is some kind of ACK message, the socket will wait a certain time before throwing an exception.
 		if (requiresRepsonse) {
@@ -90,6 +91,17 @@ public class SynchronizedClientSocket extends Thread {
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
+		}
+		else{
+			while(socket.isConnected())
+			try {
+				Thread.sleep(10);
+			}
+			catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 
 		try {
