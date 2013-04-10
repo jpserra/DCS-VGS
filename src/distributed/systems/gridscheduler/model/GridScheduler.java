@@ -159,13 +159,27 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 				//TODO Enviar mensagem aos RM's conectados a indicar que a simulacao acabou.
 				System.out.println("GS <"+hostname+":"+port+">: A SIMULACAO ACABOU!");
-			/*	ControlMessage message;
+				ControlMessage message;
 				SynchronizedClientSocket syncClientSocket;
+
+				// Send message to all RM's
 				for(InetSocketAddress address : resourceManagerLoad.keySet()) {
 					message = new ControlMessage(ControlMessageType.SimulationOver,hostname, port);
 					syncClientSocket = new SynchronizedClientSocket(message, address, handler, timeout);
-					syncClientSocket.sendMessage();
-				}*/
+					syncClientSocket.sendMessageWithoutResponse();
+				}
+					
+				System.out.println("Shutting down in 4 seconds...");
+				
+				try {
+					Thread.sleep(4000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				System.out.println("Shutting down now!...");
+				
 			}
 		}).start();
 	}
@@ -195,7 +209,23 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		syncSocket.addMessageReceivedHandler(this);
 
 		launchCheckThread();
-
+		
+		//TODO Remove
+		Thread createJobs = new Thread(new Runnable() {
+			public void run() {
+				while(true) {
+					System.out.println(resourceManagerLoad.toString());
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}	
+				}
+			}
+		});
+		createJobs.start();
+		
 	}
 
 	/**
@@ -247,7 +277,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		ControlMessage msgLog = null;
 
 		if(controlMessage.getType() != ControlMessageType.ReplyLoad) {
-			System.out.println("[GS "+hostname+":"+port+"] Message received: " + controlMessage.getType()+"\n");
+			//System.out.println("[GS "+hostname+":"+port+"] Message received: " + controlMessage.getType()+"\n");
 		}
 
 		if (controlMessage.getType() == ControlMessageType.ReplyLoad)
@@ -306,7 +336,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
 			// Tries to add the RM to the list if this was not there already.
 			if(!resourceManagerLoad.containsKey(controlMessage.getInetAddress())) {
-				resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
+				resourceManagerLoad.put(controlMessage.getInetAddress(), 0);
 			}
 			vClock.updateClock(controlMessage.getClock());
 			jobQueue.add(controlMessage.getJob());
@@ -425,7 +455,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure
 		// no jobs are scheduled to it until we know the actual load
 		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
-			resourceManagerLoad.put(controlMessage.getInetAddress(), Integer.MAX_VALUE);
+			resourceManagerLoad.put(controlMessage.getInetAddress(), 0);
 			return new ControlMessage(ControlMessageType.ResourceManagerJoinAck, hostname, port, vClock.updateClock(controlMessage.getClock()));
 		}
 
@@ -506,15 +536,15 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	// finds the least loaded resource manager and returns its url
 	private InetSocketAddress getLeastLoadedRM() {
 		InetSocketAddress ret = null; 
-		int minLoad = Integer.MAX_VALUE;
+		int maxFreeNodes = 0;
 
 		// loop over all resource managers, and pick the one with the lowest load
 		for (InetSocketAddress key : resourceManagerLoad.keySet())
 		{
-			if (resourceManagerLoad.get(key) <= minLoad)
+			if (resourceManagerLoad.get(key) > maxFreeNodes)
 			{
 				ret = key;
-				minLoad = resourceManagerLoad.get(key);
+				maxFreeNodes = resourceManagerLoad.get(key);
 			}
 		}
 
@@ -536,7 +566,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	public void run() {
 		
 		SynchronizedClientSocket syncClientSocket = null;
-		int load;
+		int freeNodes;
 		
 		while (running) {
 			// send a message to each resource manager, requesting its load
@@ -572,9 +602,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this, timeout);
 					syncClientSocket.sendMessageWithoutResponse();
 
-					// increase the estimated load of that RM by 1 (because we just added a job)
-					load = resourceManagerLoad.get(leastLoadedRM);
-					resourceManagerLoad.put(leastLoadedRM, load+1);
+					// decrease the number of free nodes (because we just added a job)
+					freeNodes = resourceManagerLoad.get(leastLoadedRM);
+					resourceManagerLoad.put(leastLoadedRM, freeNodes-1);
 
 				}
 
@@ -629,8 +659,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				bw.write(m.toString() + "\n");
 
 			bw.close();
-
-			System.out.println("Done");
 
 		} catch (IOException e) {
 			e.printStackTrace();

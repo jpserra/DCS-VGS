@@ -317,7 +317,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad,socketHostname,socketPort);
-			replyMessage.setLoad(jobQueue.size());
+			replyMessage.setLoad((cluster.getNodeCount() + MAX_QUEUE_SIZE)-jobQueue.size());
 
 			return replyMessage;
 		}
@@ -325,6 +325,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// RM receives add Job from a GS
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
+			
+			System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+" with JobID "+controlMessage.getJob().getId()+"\n");
 			LogEntry e = new LogEntry(controlMessage);
 			logger.writeToBinary(e,true);
 
@@ -369,13 +371,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// Sockets abertos...Problema?
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			System.out.println("SIMULATION OVER:" + controlMessage.getUrl() + " " + controlMessage.getPort());
-			System.out.println("Shutting down in 10 seconds...");
-			try {
-				Thread.sleep(10000);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			System.out.println("Shutting down...");
 			System.exit(0);
 		}
 		
