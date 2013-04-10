@@ -563,7 +563,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				rm.add(key);
 			}
 		}
-		ret = (InetSocketAddress)rm.toArray()[(int)(Math.random() * ((rm.size()-1) + 1))];
+		if(rm.size()>0) {
+			ret = (InetSocketAddress)rm.toArray()[(int)(Math.random() * ((rm.size()-1) + 1))];
+		}
 		return ret;		
 	}
 
