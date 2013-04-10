@@ -365,8 +365,18 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			vClock.updateClock(controlMessage.getClock());
 		}
 		
+		//TODO Ver aqui! Fim de simulacao...
+		// Sockets abertos...Problema?
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			System.out.println("SIMULATION OVER:" + controlMessage.getUrl() + " " + controlMessage.getPort());
+			System.out.println("Shutting down in 10 seconds...");
+			try {
+				Thread.sleep(10000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.exit(0);
 		}
 		
 
