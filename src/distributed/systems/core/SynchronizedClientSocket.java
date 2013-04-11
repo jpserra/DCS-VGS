@@ -47,10 +47,10 @@ public class SynchronizedClientSocket extends Thread {
 			try {
 				socket.close();
 			} catch (IOException ex) {
-				
+
 			}
 		}
-		
+
 		// Send the message
 		try {
 			out = new ObjectOutputStream(socket.getOutputStream());
@@ -97,13 +97,14 @@ public class SynchronizedClientSocket extends Thread {
 		}
 		else{
 			// Give the server time to read the data from the socket
-			while(socket.isConnected())
-			try {
-				Thread.sleep(10);
-			}
-			catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			while(socket.isConnected()) {
+				try {
+					Thread.sleep(10);
+				}
+				catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 

@@ -211,6 +211,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		finishedJobs = new HashSet<Long>();
 
 		this.resourceManagerLoad = new ConcurrentHashMap<InetSocketAddress, Integer>();
+		this.rmList = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		//this.log = new ArrayList<LogEntry>();	
 		vClock = new VectorialClock(nEntities);
