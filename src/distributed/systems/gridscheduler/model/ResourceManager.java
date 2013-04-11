@@ -431,24 +431,26 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				controlMessage.getType() == ControlMessageType.JobStarted ||
 				controlMessage.getType() == ControlMessageType.JobCompleted) {
 			// Send log message to a randomly chosen GS.
-			System.out.println("[RM "+cluster.getID()+"] JobCompleted FAILED! to [GS "+destinationAddress.getHostName()+":"+destinationAddress.getPort()+"]\n Sending to other GS now...");
-			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, getRandomGS() ,this, timeout);
+			InetSocketAddress newAddress = getRandomGS();
+			System.out.println("[RM "+cluster.getID()+"] "+controlMessage.getType().name()+" FAILED! to [GS "+destinationAddress.getHostName()+":"+destinationAddress.getPort()+"]\n Sending to "+newAddress.getHostName()+":"+newAddress.getPort()+" now...");
+			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, newAddress ,this, timeout);
 			s.sendMessage();
 		}
-
 		return null;
-
 	}
 
-	private boolean checkGSFailures(InetSocketAddress destinationAddress) {
-		if(gsList.containsKey(destinationAddress)) {
-			gsList.replace(destinationAddress, gsList.get(destinationAddress)+1);
-			if (gsList.get(destinationAddress) > 2) {
+	private synchronized boolean checkGSFailures(InetSocketAddress destinationAddress) {
+		Integer failures = gsList.get(destinationAddress);
+		if(failures != null) {
+			if (failures > 1) {
 				gsList.remove(destinationAddress);
 				return false;
 			}
+			else {
+				gsList.replace(destinationAddress,failures+1);
+			}
 		}
-		return true;
+		return false;
 	}
 
 	public void run() {

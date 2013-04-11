@@ -163,9 +163,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						e.printStackTrace();
 					}
 				}
-				
+
 				pollingThread.interrupt();
-				
+
 				//TODO Enviar mensagem aos RM's conectados a indicar que a simulacao acabou.
 				System.out.println("GS <"+hostname+":"+port+">: A SIMULACAO ACABOU!");
 				ControlMessage message;
@@ -180,7 +180,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 				System.out.println("Shutting down in 4 seconds...");
 				System.out.println("Size of the Set: "+finishedJobs.size());
-				
+
 
 				try {
 					Thread.sleep(4000);
@@ -339,7 +339,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			}			
 			return msg;
 		}
-		
+
 		if (controlMessage.getType() == ControlMessageType.RestartRM) {
 			synchronized (this) {
 				controlMessage.setClock(vClock.updateClock(controlMessage.getClock()));
@@ -550,7 +550,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				jobQueue.add(controlMessage.getJob());
 			}
 		} 
-		
+
 		if (controlMessage.getType() == ControlMessageType.RequestLoad) {
 			checkRMFailures(destinationAddress);
 		}
@@ -571,28 +571,30 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	}
 
-	private boolean checkRMFailures(InetSocketAddress destinationAddress) {
-		synchronized (this) {
-			if(rmList.replace(destinationAddress, rmList.get(destinationAddress)+1)!=null) {
-				if (rmList.get(destinationAddress) > 2) {
-					rmList.remove(destinationAddress);
-					resourceManagerLoad.remove(destinationAddress);
-					return false;
-				}
+	private synchronized boolean checkRMFailures(InetSocketAddress destinationAddress) {
+		Integer failures = rmList.get(destinationAddress);
+		if(failures != null) {
+			if (failures > 1) {
+				rmList.remove(destinationAddress);
+				resourceManagerLoad.remove(destinationAddress);
+				return false;
+			}
+			else {
+				rmList.replace(destinationAddress,failures+1);
 			}
 		}
-		return true;
+		return false;
 	}
 
 	private synchronized boolean checkGSFailures(InetSocketAddress destinationAddress) {
-		Integer load = gridSchedulersList.get(destinationAddress);
-		if(load != null) {
-			if (load > 1) {
+		Integer failures = gridSchedulersList.get(destinationAddress);
+		if(failures != null) {
+			if (failures > 1) {
 				gridSchedulersList.remove(destinationAddress);
 				return false;
 			}
 			else {
-				gridSchedulersList.replace(destinationAddress,load+1);
+				gridSchedulersList.replace(destinationAddress,failures+1);
 			}
 		}
 		return false;
@@ -604,15 +606,17 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		int maxFreeNodes = 0;
 		Set<InetSocketAddress> rm = new HashSet<InetSocketAddress>();
 		// loop over all resource managers, and pick the one with the lowest load
-		for (InetSocketAddress key : resourceManagerLoad.keySet())
-		{
-			if (resourceManagerLoad.get(key) > maxFreeNodes)
+		synchronized (resourceManagerLoad) {
+			for (InetSocketAddress key : resourceManagerLoad.keySet())
 			{
-				maxFreeNodes = resourceManagerLoad.get(key);
-				rm.clear();
-				rm.add(key);
-			} else if(resourceManagerLoad.get(key) == maxFreeNodes) {
-				rm.add(key);
+				if (resourceManagerLoad.get(key) > maxFreeNodes)
+				{
+					maxFreeNodes = resourceManagerLoad.get(key);
+					rm.clear();
+					rm.add(key);
+				} else if(resourceManagerLoad.get(key) == maxFreeNodes) {
+					rm.add(key);
+				}
 			}
 		}
 		if(rm.size()>0) {
