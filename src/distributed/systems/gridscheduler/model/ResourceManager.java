@@ -129,7 +129,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		@Override
 		public void run() {
-			System.out.println("TIMEOUT AddJob to "+destinationAddress.getHostName()+":"+destinationAddress.getPort());
+			System.out.println("TIMEOUT JOB "+message.getJob().getId()+" @ "+System.currentTimeMillis());
+			//System.out.println("TIMEOUT AddJob to "+destinationAddress.getHostName()+":"+destinationAddress.getPort());
 			handler.onReadExceptionThrown(message, destinationAddress);
 		}
 	}
@@ -166,6 +167,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			// Schedule a timer to deal with the case where a AddJobAck message doesn't arrive in the specified timeout time.
 			Timer t = new Timer();
 			t.schedule(new ScheduledTask(this, controlMessage, address), timeout);
+			System.out.println("JOB "+job.getId()+" @ "+System.currentTimeMillis());
 			jobTimers.put(job.getId(), t);
 
 			//System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
@@ -427,7 +429,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			addJob(controlMessage.getJob());//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) {
-				System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				//System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
 				t.cancel();
 				t.purge();
 			}
