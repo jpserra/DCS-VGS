@@ -176,6 +176,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 
 				System.out.println("Shutting down in 4 seconds...");
+				System.out.println("Size of the Set: "+finishedJobs.size());
+				
 
 				try {
 					Thread.sleep(4000);
@@ -445,7 +447,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			logger.writeToBinary(new LogEntry(controlMessage),true);
 			synchronizeWithAllGS(msgLog);
 
-			// Check if the simulation ended
 			if(finishedJobs.add(controlMessage.getJob().getId())) {
 				jobsFinished++;
 			}
@@ -742,7 +743,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		SynchronizedClientSocket syncClientSocket;
 
 		for(InetSocketAddress address : gridSchedulersList.keySet()) {
-			if (address.getHostString() == this.getHostname() && address.getPort() == this.getPort()) continue;
+			if (address.getHostName() == this.getHostname() && address.getPort() == this.getPort()) continue;
 			syncClientSocket = new SynchronizedClientSocket(messageToSend, address, this, timeout);
 			syncClientSocket.sendLogMessage(syncLog);
 		}

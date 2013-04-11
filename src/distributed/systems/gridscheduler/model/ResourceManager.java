@@ -167,7 +167,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			t.schedule(new ScheduledTask(this, controlMessage, address), timeout);
 			jobTimers.put(job.getId(), t);
 
-			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostString()+":"+address.getPort()+"]\n");
+			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
 
 		} else { // otherwise store it in the local queue
 			jobQueue.add(job);
