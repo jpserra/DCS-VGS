@@ -161,7 +161,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, socketHostname, socketPort);
 			controlMessage.setClock(vClock.getClock());
-			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, getRandomGS(), this, timeout);
+			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this, timeout);
 			syncClientSocket.sendMessageWithoutResponse();
 
 			// Schedule a timer to deal with the case where a AddJobAck message doesn't arrive in the specified timeout time.
