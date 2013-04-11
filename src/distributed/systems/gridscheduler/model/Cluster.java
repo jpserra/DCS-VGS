@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import distributed.systems.core.LogEntry;
+import distributed.systems.core.LogManager;
 
 /**
  * 
@@ -66,7 +67,22 @@ public class Cluster implements Runnable {
 
 		// Initialize the resource manager for this cluster
 		resourceManager = new ResourceManager(id, nEntities,this, restart);
-		resourceManager.connectToGridScheduler(gridSchedulerHostname,gridSchedulerPort);
+
+		// Use the Log file to get the info before it starts to get updated.
+		if(restart) {
+			String aux = null;
+			//Retrieve the Log before the crash.
+			LogManager logger = new LogManager(resourceManager.getLogFileName());
+			LogEntry[] log = logger.readOrderedLog();
+			//LogEntry[] log = this.resourceManager.getFullLog();
+			//Check the Log for Jobs that were successfully Delegated or Completed
+			finishedJobs = new HashSet<Long>();
+			for(LogEntry l : log) {
+				aux = l.getEvent();
+				if(aux.equals("JOB_COMPLETED") || aux.equals("JOB_SENT"))
+					finishedJobs.add(l.getJob().getId());
+			}
+		}
 
 		// Initialize the nodes 
 		for (int i = 0; i < nodeCount; i++) {
@@ -76,26 +92,10 @@ public class Cluster implements Runnable {
 			nodes.add(n);
 		}
 
-		//TODO Dentro desta thread, tem de verificar se restart = true, e se sim, ir ao log, 
-		//buscar os trabalhos j‡ gerados para apenas gerar os que ainda n‹o foram enviados a um grid Scheduler
+		resourceManager.connectToGridScheduler(gridSchedulerHostname,gridSchedulerPort);
+
 		if(restart) {
-
-			String aux = null;
-			LogEntry[] log = this.resourceManager.getFullLog();
-
-			finishedJobs = new HashSet<Long>();
-			//TODO Escolher os ID's dos trabalhos que já não precisam de ser gerados e colocar num Set
-			//  Critérios: 
-			//    - Jobs que tenham sido delegados com sucesso (JobAddAck deve logar este evento)
-			//    - Jobs que tenham completado nesta máquina (um evento é logado quando acontece)
-			// Estes dois eventos devem ser diferentes - verificar!
-			for(LogEntry l : log) {
-				aux = l.getEvent();
-				if(aux.equals("JOB_COMPLETED") || aux.equals("JOB_SENT"))
-					finishedJobs.add(l.getJob().getId());
-			}
-
-			// Launch the thread with th JobID verification upon generation.
+			// Launch the thread with the JobID verification upon generation.
 			Thread createJobs = new Thread(new Runnable() {
 				public void run() {
 					int jobId = id*100000;
@@ -119,7 +119,7 @@ public class Cluster implements Runnable {
 			});
 			createJobs.start();
 		}
-		// Launch the thread normallly.
+		// Launch the thread normally.
 		else {
 			Thread createJobs = new Thread(new Runnable() {
 				public void run() {
@@ -215,21 +215,17 @@ public class Cluster implements Runnable {
 	 * finished for instance.
 	 */
 	public void run() {
-
 		while (running) {
 			// poll the nodes
 			for (Node node : nodes)
 				node.poll();
-
 			// sleep
 			try {
 				Thread.sleep(pollSleep);
 			} catch (InterruptedException ex) {
 				assert(false) : "Cluster poll thread was interrupted";
 			}
-
 		}
-
 	}
 
 	/**
@@ -300,6 +296,5 @@ public class Cluster implements Runnable {
 			}
 		}
 	}
-
 
 }

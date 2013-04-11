@@ -10,66 +10,54 @@ public class LogEntry implements Serializable {
 
 	private static final long serialVersionUID = 8054991011970570003L;
 	private InetSocketAddress origin;
-//	private Long id; //Generic id can be JobID, ClusterID and GSID
+	//	private Long id; //Generic id can be JobID, ClusterID and GSID
 	private String event; 
 	private int[] clock;
 	private Job job;
 
 	public LogEntry(ControlMessage message){
 		this.setOrigin(message.getInetAddress());
-		switch(message.getType().toString()){
-		
-		case "JobArrival":
-			this.setEvent("JOB_ARRIVAL");
-			break;
-		
-		case "JobStarted":
-			this.setEvent("JOB_STARTED");
-			break;
-		
-		case "JobCompleted":
-			this.setEvent("JOB_COMPLETED");
-			break;
-		
-		case "GSLogJobArrival":
-			this.setEvent("JOB_ARRIVAL");
-			break;
-		
-		case "GSLogJobStarted":
-			this.setEvent("JOB_STARTED");
-			break;
-			
-		case "GSLogJobCompleted":
-			this.setEvent("JOB_COMPLETED");
-			break;
-			
-		case "AddJobAck":
-			this.setEvent("JOB_SENT");
-			break;
-			
-			default: 		this.setEvent(message.getType().toString());
-
-		}
-		
+		this.setClock(message.getClock());
 		if(message.getJob() != null)
 			this.setJob(message.getJob());
-		this.setClock(message.getClock());
+		switch(message.getType().toString()){
+			case "JobArrival":
+				this.setEvent("JOB_ARRIVAL");
+				break;
+			case "JobStarted":
+				this.setEvent("JOB_STARTED");
+				break;
+			case "JobCompleted":
+				this.setEvent("JOB_COMPLETED");
+				break;
+			case "GSLogJobArrival":
+				this.setEvent("JOB_ARRIVAL");
+				break;
+			case "GSLogJobStarted":
+				this.setEvent("JOB_STARTED");
+				break;
+			case "GSLogJobCompleted":
+				this.setEvent("JOB_COMPLETED");
+				break;
+			case "AddJobAck":
+				this.setEvent("JOB_SENT");
+				break;
+			case "RestartRM":
+				this.setEvent("RESTART_RM");
+				break;
+			case "RestartGS":
+				this.setEvent("RESTART_GS");
+				break;
+			default: 		this.setEvent(message.getType().toString());
+		}
 	}
-	
+
 	public LogEntry(Job j, String evnt, int[] clock){
 		this.setOrigin(null);
 		this.setEvent(evnt);
 		this.setJob(j);
 		this.setClock(clock);
 	}
-//
-//	public Long getId() {
-//		return id;
-//	}
-//
-//	public void setId(Long id) {
-//		this.id = id;
-//	}
 
 	public String getEvent() {
 		return event;
@@ -98,28 +86,27 @@ public class LogEntry implements Serializable {
 	@Override
 	public String toString(){
 		String s = "[";
-		
+
 		if(clock != null){
 			s += "VecClock: [ ";
-		
+
 			for(int i = 0; i< clock.length; i++)
 				s+= clock[i] + ", ";
 
 			s+= "]";
-		if(origin != null)
-			s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
+			if(origin != null)
+				s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
 
-//		if(id != null)
-//			s += "ID: " + id + " | ";
+			//		if(id != null)
+			//			s += "ID: " + id + " | ";
 
-		if(event != null)
-			s += "Event: " + event + " | "; 
+			if(event != null)
+				s += "Event: " + event + " | "; 
 
-		if(job != null)
-			s += "Job: " + job.toString() + " | ";
-		
+			if(job != null)
+				s += "Job: " + job.toString() + " | ";
+
 		}
-		
 
 		s+= " ]";
 		return s;

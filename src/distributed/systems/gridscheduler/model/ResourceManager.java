@@ -96,7 +96,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.logfilename += socketHostname+":"+socketPort+".log";
 		this.logger = new LogManager(logfilename);
 		
-		if(!restart) {
+		if(restart) {
+			LogEntry[] orderedLog = logger.readOrderedLog();
+			//Set the clock to the value where it stopped.
+			vClock.setIndexValue(id, orderedLog[orderedLog.length-1].getClock()[id]);
+			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
+		}
+		else {
 			File file = new File (logfilename);
 			file.delete();
 		}

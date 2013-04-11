@@ -62,8 +62,6 @@ public class SynchronizedClientSocket extends Thread {
 			requiresRepsonse = false;
 			e.printStackTrace();
 		}
-		
-		
 
 		// If there is some kind of ACK message, the socket will wait a certain time before throwing an exception.
 		if (requiresRepsonse) {
@@ -91,7 +89,6 @@ public class SynchronizedClientSocket extends Thread {
 				System.out.println("IOException! "+cMessage.getType()+
 						" from "+cMessage.getUrl()+":"+cMessage.getPort()+
 						"to "+address.getHostName()+":"+address.getPort());
-				message = handler.onReadExceptionThrown(cMessage, address);
 				message = handler.onReadExceptionThrown(cMessage, address);
 				e.printStackTrace();
 			} catch (ClassNotFoundException e) {
