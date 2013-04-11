@@ -129,6 +129,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		@Override
 		public void run() {
+			System.out.println("TIMEUT AddJob to "+destinationAddress.getHostName()+":"+destinationAddress.getPort());
 			handler.onReadExceptionThrown(message, destinationAddress);
 		}
 	}
@@ -262,7 +263,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.gridSchedulerHostname = gridSchedulerHostname;
 		this.gridSchedulerPort = gridSchedulerPort;
 
-
 		SynchronizedSocket syncSocket;
 		syncSocket = new SynchronizedSocket(socketHostname, socketPort);
 		syncSocket.addMessageReceivedHandler(this);
@@ -332,7 +332,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// RM receives add Job from a GS
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
-			
 			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+" with JobID "+controlMessage.getJob().getId()+"\n");
 			LogEntry e = new LogEntry(controlMessage);
 			logger.writeToBinary(e,true);

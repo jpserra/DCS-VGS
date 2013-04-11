@@ -626,11 +626,11 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	/**
 	 * Randomly selects one GS from the poll of GS's
-	 * @return the address of the choosen GS
-	 */
+	 * @return the address of the chosen GS
+	 *//*
 	private InetSocketAddress getRandomGS() {
 		return (InetSocketAddress)gridSchedulersList.keySet().toArray()[(int)(Math.random() * ((gridSchedulersList.size()-1) + 1))];
-	}
+	}*/
 
 	/**
 	 * Polling thread runner. This thread polls each resource manager in turn to get its load,
