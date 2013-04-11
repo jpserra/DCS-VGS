@@ -580,14 +580,18 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		return true;
 	}
 
-	private boolean checkGSFailures(InetSocketAddress destinationAddress) {
-		if(gridSchedulersList.replace(destinationAddress,gridSchedulersList.get(destinationAddress)+1)!=null) {
-			if (gridSchedulersList.get(destinationAddress) > 2) {
+	private synchronized boolean checkGSFailures(InetSocketAddress destinationAddress) {
+		Integer load = gridSchedulersList.get(destinationAddress);
+		if(load != null) {
+			if (load > 1) {
 				gridSchedulersList.remove(destinationAddress);
 				return false;
 			}
+			else {
+				gridSchedulersList.replace(destinationAddress,load+1);
+			}
 		}
-		return true;
+		return false;
 	}
 
 	// finds the least loaded resource manager and returns its url
