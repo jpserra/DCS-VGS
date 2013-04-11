@@ -171,13 +171,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			// Schedule a timer to deal with the case where a AddJobAck message doesn't arrive in the specified timeout time.
 			Timer t = new Timer();
 			t.schedule(new ScheduledTask(this, controlMessage, address), timeout);
-			System.out.println("JOB "+job.getId()+" @ "+System.currentTimeMillis());
+			System.out.println("JOB "+job.getId()+"sent to [GS "+address.getHostName()+":"+address.getPort()+"] @ "+System.currentTimeMillis());
 			jobTimers.put(job.getId(), t);
 
 			//System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
 
 		} else { // otherwise store it in the local queue
-			jobQueue.add(job);
+			if(jobQueue.add(job))
+				System.out.println("JOB "+job.getId()+" added to local queue...");
 			sendJobEvent(job, ControlMessageType.JobArrival);
 			//TODO Check this
 			LogEntry e = new LogEntry(job, "JOB_ARRIVAL", vClock.getClock());

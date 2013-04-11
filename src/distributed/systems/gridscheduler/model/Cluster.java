@@ -95,7 +95,7 @@ public class Cluster implements Runnable {
 		resourceManager.connectToGridScheduler(gridSchedulerHostname,gridSchedulerPort);
 
 		try {
-			System.out.println(resourceManager.getGsList());
+			System.out.println(resourceManager.getGsList()+"\nSleeping for 2 seconds before starting to generate jobs...");
 			Thread.sleep(2000L);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
