@@ -95,12 +95,14 @@ public class Cluster implements Runnable {
 		resourceManager.connectToGridScheduler(gridSchedulerHostname,gridSchedulerPort);
 
 		try {
+			System.out.println(resourceManager.getGsList());
 			Thread.sleep(2000L);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
-
+		System.out.println(resourceManager.getGsList());
+		
 		if(restart) {
 			// Launch the thread with the JobID verification upon generation.
 			Thread createJobs = new Thread(new Runnable() {

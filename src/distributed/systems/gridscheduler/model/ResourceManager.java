@@ -63,6 +63,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	//GG list with addresses and number of failures for each one
 	private ConcurrentHashMap<InetSocketAddress, Integer> gsList;
 
+	public ConcurrentHashMap<InetSocketAddress, Integer> getGsList() {
+		return gsList;
+	}
+
 	private ConcurrentHashMap<Long, Timer> jobTimers; 
 
 	// polling frequency, 1hz
