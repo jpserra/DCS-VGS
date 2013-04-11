@@ -52,7 +52,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private String logfilename = "";
 
 	// timeout to recieve an ACK (response) message
-	private final int timeout = 1000;
+	private final int timeout = 2000;
 
 	public static final int MAX_QUEUE_SIZE = 10; 
 
