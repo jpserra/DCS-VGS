@@ -167,7 +167,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			t.schedule(new ScheduledTask(this, controlMessage, address), timeout);
 			jobTimers.put(job.getId(), t);
 
-			System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
+			//System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
 
 		} else { // otherwise store it in the local queue
 			jobQueue.add(job);
@@ -333,7 +333,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
 			
-			System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+" with JobID "+controlMessage.getJob().getId()+"\n");
+			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+" with JobID "+controlMessage.getJob().getId()+"\n");
 			LogEntry e = new LogEntry(controlMessage);
 			logger.writeToBinary(e,true);
 
@@ -431,6 +431,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				controlMessage.getType() == ControlMessageType.JobStarted ||
 				controlMessage.getType() == ControlMessageType.JobCompleted) {
 			// Send log message to a randomly chosen GS.
+			System.out.println("[RM "+cluster.getID()+"] JobCompleted FAILED! to [GS "+destinationAddress.getHostName()+":"+destinationAddress.getPort()+"]\n Sending to other GS now...");
 			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, getRandomGS() ,this, timeout);
 			s.sendMessage();
 		}
