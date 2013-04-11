@@ -431,13 +431,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// if jobAdd fails it will add to the jobQueue again
 		else if (controlMessage.getType() == ControlMessageType.AddJob) {
 			//this.jobQueue.add(controlMessage.getJob());
-			addJob(controlMessage.getJob());//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
+			//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) {
-				//System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
 				t.cancel();
 				t.purge();
 			}
+			addJob(controlMessage.getJob());
 		}
 
 		else if (controlMessage.getType() == ControlMessageType.JobArrival ||
