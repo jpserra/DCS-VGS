@@ -129,7 +129,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		@Override
 		public void run() {
-			System.out.println("TIMEUT AddJob to "+destinationAddress.getHostName()+":"+destinationAddress.getPort());
+			System.out.println("TIMEOUT AddJob to "+destinationAddress.getHostName()+":"+destinationAddress.getPort());
 			handler.onReadExceptionThrown(message, destinationAddress);
 		}
 	}
@@ -359,7 +359,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		{
 
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
-			if(t != null) t.cancel();
+			if(t != null) {
+				System.out.println("AddJobAck --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				t.cancel();
+				t.purge();
+			}
 			
 			LogEntry e = new LogEntry(controlMessage);
 			logger.writeToBinary(e,true);
@@ -379,7 +383,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//TODO Preparar o LOG (ficheiro texto)
 			System.exit(0);
 		}
-		
 
 		return null;
 
@@ -423,7 +426,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//this.jobQueue.add(controlMessage.getJob());
 			addJob(controlMessage.getJob());//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
-			if (t != null) t.cancel();
+			if (t != null) {
+				System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				t.cancel();
+				t.purge();
+			}
 		}
 
 		else if (controlMessage.getType() == ControlMessageType.JobArrival ||
