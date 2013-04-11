@@ -558,7 +558,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival ||
 				controlMessage.getType() == ControlMessageType.GSLogJobCompleted ||
 				controlMessage.getType() == ControlMessageType.GSLogJobStarted){
-			destinationAddress = controlMessage.getInetAddress();
 			if(checkGSFailures(destinationAddress))
 				return controlMessage;
 		}
