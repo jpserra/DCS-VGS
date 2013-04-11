@@ -331,8 +331,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad,socketHostname,socketPort);
-			replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size())/gsList.size());
-
+			replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size()));
+			//replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size())/gsList.size());
 			return replyMessage;
 		}
 

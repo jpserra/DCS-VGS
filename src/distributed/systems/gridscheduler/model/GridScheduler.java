@@ -602,7 +602,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	// finds the least loaded resource manager and returns its url
 	private InetSocketAddress getLeastLoadedRM() {
 		InetSocketAddress ret = null; 
-		int maxFreeNodes = 0;
+		int maxFreeNodes = Integer.MIN_VALUE;
 		Set<InetSocketAddress> rm = new HashSet<InetSocketAddress>();
 		// loop over all resource managers, and pick the one with the lowest load
 		synchronized (resourceManagerLoad) {
