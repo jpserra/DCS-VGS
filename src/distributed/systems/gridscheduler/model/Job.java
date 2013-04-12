@@ -10,15 +10,13 @@ import java.net.InetSocketAddress;
  *
  */
 public class Job implements Serializable{
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 877471067429263379L;
+	private long id;
 	private long duration;
 	private JobStatus status;
-	private long id;
 	private InetSocketAddress originalRM;
-
+	
 	/**
 	 * Constructs a new Job object with a certain duration and id. The id has to be unique
 	 * within the distributed system to avoid collisions.
@@ -31,9 +29,7 @@ public class Job implements Serializable{
 	 * @param id job ID
 	 */
 	public Job(long duration, long id) {
-		// Preconditions
 		assert(duration > 0) : "parameter 'duration' should be > 0";
-
 		this.duration = duration;
 		this.status = JobStatus.Waiting;
 		this.id = id; 

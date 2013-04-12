@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashSet;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,15 +42,16 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private Cluster cluster;
 	private Queue<Job> jobQueue;
 
-	private String socketHostname;
-	private int socketPort;
+	private String hostname;
+	private int port;
 	private int identifier;
 	private int nEntities;
 	private VectorialClock vClock;
 	private LogManager logger;
 
+	private Set<Long> finishedOutsideJobs;
+	private Set<Long> finishedOwnJobs;
 	
-
 	private String logfilename = "";
 
 	// timeout to recieve an ACK (response) message
@@ -60,19 +63,21 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private String gridSchedulerHostname = null;
 	private int gridSchedulerPort;
 
-	//GG list with addresses and number of failures for each one
+	//GS list with addresses and number of failures for each one
 	private ConcurrentHashMap<InetSocketAddress, Integer> gsList;
-
-	public ConcurrentHashMap<InetSocketAddress, Integer> getGsList() {
-		return gsList;
-	}
-
+	
+	//Timers that control the job delegation for each job that was delegated.
 	private ConcurrentHashMap<Long, Timer> jobTimers; 
 
 	// polling frequency, 1hz
 	private long pollSleep = 100;
 	private boolean running;
 	private Thread pollingThread;
+	
+	//Getter's
+	public Set<Long> getFinishedOutsideJobs() {return finishedOutsideJobs;}
+	public Set<Long> getFinishedOwnJobs() {return finishedOwnJobs;}
+	public ConcurrentHashMap<InetSocketAddress, Integer> getGsList() {return gsList;}
 
 	/**
 	 * Constructs a new ResourceManager object.
@@ -90,14 +95,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(cluster != null);
 
 		this.cluster = cluster;
-		this.socketHostname = cluster.getName();
-		this.socketPort = cluster.getPort();
+		this.hostname = cluster.getName();
+		this.port = cluster.getPort();
 		this.identifier = id;
 		this.nEntities = nEntities;
 		
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
-		this.logfilename += socketHostname+":"+socketPort+".log";
+		this.logfilename += hostname+":"+port+".log";
 		this.logger = new LogManager(logfilename);
 		
 		if(restart) {
@@ -105,6 +110,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//Set the clock to the value where it stopped.
 			vClock.setIndexValue(id, orderedLog[orderedLog.length-1].getClock()[id]);
 			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
+			getLogInformation(orderedLog);
 		}
 		else {
 			File file = new File (logfilename);
@@ -118,6 +124,18 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		pollingThread = new Thread(this);
 		pollingThread.start();
 
+	}
+
+	private void getLogInformation(LogEntry[] orderedLog) {
+		// 1. Get Job information from the Log
+		
+		// 2. Query each line to fill the structure
+		
+		// 3. See which Jobs still need to be computed (job completed flag = 0)
+		// Add the Job ID's to the sets according to the flag own job.
+		finishedOwnJobs = new HashSet<Long>();
+		//finishedOutsideJobs = new HashSet<Long>();
+		
 	}
 
 	private class ScheduledTask extends TimerTask implements Runnable {
@@ -155,15 +173,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// check preconditions
 		assert(job != null) : "the parameter 'job' cannot be null";
 
-		InetSocketAddress address;
-		job.setOriginalRM(new InetSocketAddress(socketHostname, socketPort));
+		
 
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 
-			address = getRandomGS();
+			InetSocketAddress address = getRandomGS();
 
-			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, socketHostname, socketPort);
+			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, hostname, port);
 			controlMessage.setClock(vClock.getClock());
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this, timeout);
 			syncClientSocket.sendMessageWithoutResponse();
@@ -179,9 +196,16 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		} else { // otherwise store it in the local queue
 			if(jobQueue.add(job))
 				System.out.println("JOB "+job.getId()+" added to local queue...");
-			sendJobEvent(job, ControlMessageType.JobArrival);
+			int[] tempClock;
+			tempClock = sendJobEvent(job, ControlMessageType.JobArrival);
 			//TODO Check this
-			LogEntry e = new LogEntry(job, "JOB_ARRIVAL", vClock.getClock());
+			LogEntry e = null;
+			if(job.getOriginalRM().equals(new InetSocketAddress(hostname, port))) {
+				e = new LogEntry(job, "JOB_ARRIVAL_INT", tempClock);
+			} else {
+				e = new LogEntry(job, "JOB_ARRIVAL_EXT", tempClock);
+			}
+			
 			logger.writeToBinary(e,true);
 			scheduleJobs();
 		}
@@ -207,11 +231,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public void scheduleJobs() {
 		Node freeNode;
 		Job waitingJob;
+		int[] tempClock;
 		// while there are jobs to do and we have nodes available, assign the jobs to the free nodes
 		while ( ((waitingJob = getWaitingJob()) != null) && ((freeNode = cluster.getFreeNode()) != null) ) {
 			freeNode.startJob(waitingJob);
-			sendJobEvent(waitingJob,ControlMessageType.JobStarted);
-			LogEntry e = new LogEntry(waitingJob, "JOB_STARTED", vClock.getClock());
+			tempClock = sendJobEvent(waitingJob,ControlMessageType.JobStarted);
+			LogEntry e = new LogEntry(waitingJob, "JOB_STARTED", tempClock);
 			logger.writeToBinary(e,true);
 
 		}
@@ -225,17 +250,18 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public void jobDone(Job job) {
 		// preconditions
 		assert(job != null) : "parameter 'job' cannot be null";
+		int[] tempClock;
 		// try to contact a GS in order to inform that a job was completed locally
-		sendJobEvent(job,ControlMessageType.JobCompleted);
+		tempClock = sendJobEvent(job,ControlMessageType.JobCompleted);
 		// write in the log that the job was executed
-		LogEntry e = new LogEntry(job, "JOB_COMPLETED", vClock.getClock());
+		LogEntry e = new LogEntry(job, "JOB_COMPLETED", tempClock);
 		logger.writeToBinary(e,true);
 		// job finished, remove it from our pool
 		jobQueue.remove(job);
 	}
 
 	/**
-	 * @return the hostname of the grid scheduler this RM connected in the beggining.
+	 * @return the hostname of the grid scheduler this RM connected in the beginning.
 	 */
 	public String getGridSchedulerHostname() {
 		return gridSchedulerHostname;
@@ -271,10 +297,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.gridSchedulerPort = gridSchedulerPort;
 
 		SynchronizedSocket syncSocket;
-		syncSocket = new SynchronizedSocket(socketHostname, socketPort);
+		syncSocket = new SynchronizedSocket(hostname, port);
 		syncSocket.addMessageReceivedHandler(this);
 
-		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList, socketHostname, socketPort);
+		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList, hostname, port);
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(message, new InetSocketAddress(gridSchedulerHostname, gridSchedulerPort), this, timeout);
 		syncClientSocket.sendMessageInSameThread(message, true);
 
@@ -304,7 +330,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		{
 			for (InetSocketAddress address:controlMessage.getGridSchedulersList()){
 				gsList.put(address, 0);
-				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketHostname, socketPort);
+				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.hostname, port);
 				msg.setClock(vClock.getClock());
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 				syncClientSocket.sendMessage();
@@ -322,7 +348,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			// RM updates the GS list.
 			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
 				if(!gsList.containsKey(address)) {
-					ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.socketHostname, socketPort);
+					ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.hostname, port);
 					msg.setClock(vClock.getClock());
 					syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 					syncClientSocket.sendMessage();
@@ -330,7 +356,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				gsList.put(address, 0);
 			}
 
-			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad,socketHostname,socketPort);
+			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad,hostname,port);
 			replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size()));
 			//replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size())/gsList.size());
 			return replyMessage;
@@ -350,7 +376,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			ControlMessage msg;
 			synchronized (this) {
 				vClock.incrementClock(identifier);
-				msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.socketHostname, this.socketPort);
+				msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
 				msg.setClock(vClock.getClock());
 			}
 
@@ -430,14 +456,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		// if jobAdd fails it will add to the jobQueue again
 		else if (controlMessage.getType() == ControlMessageType.AddJob) {
-			//this.jobQueue.add(controlMessage.getJob());
-			//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) {
-				System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				//System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
 				t.cancel();
 				t.purge();
 			}
+			//Adds job again to RM, if it has free space it can execute it, or it can send it again to a GS
 			addJob(controlMessage.getJob());
 		}
 
@@ -446,7 +471,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				controlMessage.getType() == ControlMessageType.JobCompleted) {
 			// Send log message to a randomly chosen GS.
 			InetSocketAddress newAddress = getRandomGS();
-			System.out.println("[RM "+cluster.getID()+"] "+controlMessage.getType().name()+" FAILED! to [GS "+destinationAddress.getHostName()+":"+destinationAddress.getPort()+"]\n Sending to "+newAddress.getHostName()+":"+newAddress.getPort()+" now...");
+			//System.out.println("[RM "+cluster.getID()+"] "+controlMessage.getType().name()+" FAILED! to [GS "+destinationAddress.getHostName()+":"+destinationAddress.getPort()+"]\n Sending to "+newAddress.getHostName()+":"+newAddress.getPort()+" now...");
 			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, newAddress ,this, timeout);
 			s.sendMessage();
 		}
@@ -508,15 +533,18 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * @param job
 	 * @param messageType
 	 */
-	private synchronized void sendJobEvent(Job job, ControlMessageType messageType) {
+	private synchronized int[] sendJobEvent(Job job, ControlMessageType messageType) {
 		ControlMessage msg;
+		int[] tempClock;
 		synchronized(this) {
-			msg = new ControlMessage(messageType, job, this.socketHostname, this.socketPort);
+			msg = new ControlMessage(messageType, job, this.hostname, this.port);
 			vClock.incrementClock(this.identifier);
-			msg.setClock(vClock.getClock());
+			tempClock = vClock.getClock();
+			msg.setClock(tempClock);
 		}
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, timeout);
 		syncClientSocket.sendMessage();
+		return tempClock;
 	}
 	
 	public LogEntry[] getFullLog(){

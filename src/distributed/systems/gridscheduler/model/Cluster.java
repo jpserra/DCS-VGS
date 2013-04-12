@@ -1,5 +1,6 @@
 package distributed.systems.gridscheduler.model;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -64,25 +65,12 @@ public class Cluster implements Runnable {
 		this.nJobsToExecute = nJobsToExecute;
 		this.restart = restart;
 		this.nodes = new ArrayList<Node>(nodeCount);
+		
+		final String hostnameRM = hostname;
+		final int portRM = port;
 
 		// Initialize the resource manager for this cluster
 		resourceManager = new ResourceManager(id, nEntities,this, restart);
-
-		// Use the Log file to get the info before it starts to get updated.
-		if(restart) {
-			String aux = null;
-			//Retrieve the Log before the crash.
-			LogManager logger = new LogManager(resourceManager.getLogFileName());
-			LogEntry[] log = logger.readOrderedLog();
-			//LogEntry[] log = this.resourceManager.getFullLog();
-			//Check the Log for Jobs that were successfully Delegated or Completed
-			finishedJobs = new HashSet<Long>();
-			for(LogEntry l : log) {
-				aux = l.getEvent();
-				if(aux.equals("JOB_COMPLETED") || aux.equals("JOB_SENT"))
-					finishedJobs.add(l.getJob().getId());
-			}
-		}
 
 		// Initialize the nodes 
 		for (int i = 0; i < nodeCount; i++) {
@@ -95,8 +83,8 @@ public class Cluster implements Runnable {
 		resourceManager.connectToGridScheduler(gridSchedulerHostname,gridSchedulerPort);
 
 		try {
-			System.out.println(resourceManager.getGsList()+"\nSleeping for 2 seconds before starting to generate jobs...");
-			Thread.sleep(2000L);
+			System.out.println(resourceManager.getGsList()+"\n5 seconds to start generating jobs...");
+			Thread.sleep(4000L);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -105,6 +93,7 @@ public class Cluster implements Runnable {
 		
 		if(restart) {
 			// Launch the thread with the JobID verification upon generation.
+			//TODO Needs to be changed
 			Thread createJobs = new Thread(new Runnable() {
 				public void run() {
 					int jobId = id*100000;
@@ -115,6 +104,7 @@ public class Cluster implements Runnable {
 							continue;
 						}
 						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
+						job.setOriginalRM(new InetSocketAddress(hostnameRM, portRM));
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
@@ -135,6 +125,7 @@ public class Cluster implements Runnable {
 					int jobId = id*100000;
 					for(int i = 0; i < nJobsToExecute; i++) {
 						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
+						job.setOriginalRM(new InetSocketAddress(hostnameRM, portRM));
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
