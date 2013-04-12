@@ -173,8 +173,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// check preconditions
 		assert(job != null) : "the parameter 'job' cannot be null";
 
-		
-
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 
@@ -202,8 +200,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			LogEntry e = null;
 			if(job.getOriginalRM().equals(new InetSocketAddress(hostname, port))) {
 				e = new LogEntry(job, "JOB_ARRIVAL_INT", tempClock);
-			} else {
-				e = new LogEntry(job, "JOB_ARRIVAL_EXT", tempClock);
 			}
 			
 			logger.writeToBinary(e,true);
@@ -366,22 +362,23 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
 			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+" with JobID "+controlMessage.getJob().getId()+"\n");
-			LogEntry e = new LogEntry(controlMessage);
-			logger.writeToBinary(e,true);
-
-			jobQueue.add(controlMessage.getJob());
-
-			vClock.updateClock(controlMessage.getClock());
-			//Now only sends message to the GS from where the message came from.
 			ControlMessage msg;
+			LogEntry e = null;
+			jobQueue.add(controlMessage.getJob());
+			//Now only sends message to the GS from where the message came from.
 			synchronized (this) {
+				vClock.updateClock(controlMessage.getClock());
 				vClock.incrementClock(identifier);
+				e = new LogEntry(controlMessage.getJob(), "JOB_ARRIVAL_EXT", vClock.getClock());
+				e.setOrigin(controlMessage.getInetAddress());
 				msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
 				msg.setClock(vClock.getClock());
 			}
-
+			
+			logger.writeToBinary(e,true);
 			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, timeout);
 			syncClientSocket.sendMessage();
+			
 			scheduleJobs();
 			
 			return null;
