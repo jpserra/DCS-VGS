@@ -95,12 +95,11 @@ public class LogManager {
 					if (orderedLog[i].getClock()[j] >= orderedLog[i + 1].getClock()[j]) {
 						if(orderedLog[i].getClock()[j] > orderedLog[i + 1].getClock()[j])
 							atLeastOne = true;
-						if (atLeastOne) {
+						if (j == clockLenght-1 && atLeastOne) {
 							tmpLog = orderedLog[i];
 							orderedLog[i] = orderedLog[i + 1];
 							orderedLog[i + 1] = tmpLog;
 							tradeMade = true;
-							j=clockLenght;
 						}
 					} else {
 						j=clockLenght;
