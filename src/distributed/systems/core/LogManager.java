@@ -1,9 +1,11 @@
 package distributed.systems.core;
 
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -119,6 +121,33 @@ public class LogManager {
 		protected void writeStreamHeader() throws IOException {
 			reset();
 		}
+	}
+
+
+	public void writeToTextfile() {
+		LogEntry[] log = readOrderedLog();
+		try {
+
+			File file = new File(filename+"_readable");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			for(LogEntry m : log) {
+				bw.write(m.toString() + "\n");
+			}
+
+			bw.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 

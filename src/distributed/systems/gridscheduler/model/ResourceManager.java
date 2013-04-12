@@ -414,6 +414,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			System.out.println("SIMULATION OVER:" + controlMessage.getUrl() + " " + controlMessage.getPort());
 			System.out.println("Shutting down...");
 			//TODO Preparar o LOG (ficheiro texto)
+			logger.writeToTextfile();
 			System.exit(0);
 		}
 
