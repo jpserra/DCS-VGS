@@ -49,12 +49,25 @@ public class VectorialClock implements Serializable {
 		return clock.clone();
 	}
 
+	public synchronized int[] updateClockID(int[] externalClock, int id) {
+		for (int i = 0; i < clock.length; i++) {
+			if(id!=i) {
+				if (externalClock[i] > clock[i]) {
+					clock[i] = externalClock[i];
+				}
+			} else {
+				clock[i] = externalClock[i];
+			}
+		}
+		return clock.clone();
+	}
+
 	public void setClock(int[] externalClock) {
 		for (int i = 0; i < clock.length; i++) {
 			clock[i] = externalClock[i];
 		}
 	}
-	
+
 	public void setIndexValue(int id, int value) {
 		assert(id<clock.length);
 		assert(id>=0);

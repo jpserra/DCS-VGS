@@ -23,6 +23,16 @@ public class ControlMessage extends Message {
 	private static final long serialVersionUID = 1453428681740343634L;
 
 	private final ControlMessageType type;
+	private int id;
+	public int getId() {
+		return id;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+
 	private String url;
 	private int port;
 	private LogEntry logEntry;
@@ -35,31 +45,31 @@ public class ControlMessage extends Message {
 	 * Constructs a new ControlMessage object
 	 * @param type the type of control message
 	 */
-	public ControlMessage(ControlMessageType type) {
+	public ControlMessage(int id, ControlMessageType type) {
 		this.type = type;
 	}
 
-	public ControlMessage(ControlMessageType type, String url, int port) {
+	public ControlMessage(int id, ControlMessageType type, String url, int port) {
 		this.type = type;
 		this.url = url;
 		this.port = port;
 	}
 	
-	public ControlMessage(ControlMessageType type, Job job, String url, int port) {
+	public ControlMessage(int id, ControlMessageType type, Job job, String url, int port) {
 		this.type = type;
 		this.job = job;
 		this.url = url;
 		this.port = port;
 	}
 	
-	public ControlMessage(ControlMessageType type, String url, int port, int[] clock) {
+	public ControlMessage(int id, ControlMessageType type, String url, int port, int[] clock) {
 		this.type = type;
 		this.url = url;
 		this.port = port;
 		this.clock = clock;
 	}
 	
-	public ControlMessage(ControlMessageType type, Job job, String url, int port, int[] clock) {
+	public ControlMessage(int id, ControlMessageType type, Job job, String url, int port, int[] clock) {
 		this.type = type;
 		this.job = job;
 		this.url = url;
@@ -67,7 +77,7 @@ public class ControlMessage extends Message {
 		this.clock = clock;
 	}
 
-	public ControlMessage(ControlMessageType type, LogEntry logEntry, String url, int port) {
+	public ControlMessage(int id, ControlMessageType type, LogEntry logEntry, String url, int port) {
 		this.type = type;
 		this.logEntry = logEntry;
 		this.url = url;

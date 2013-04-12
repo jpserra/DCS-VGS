@@ -183,7 +183,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			tempClock = vClock.incrementClock(identifier).clone();
 
-			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, hostname, port);
+			ControlMessage controlMessage = new ControlMessage(identifier, ControlMessageType.AddJob, job, hostname, port);
 			controlMessage.setClock(tempClock);
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this, timeout);
 			syncClientSocket.sendMessageWithoutResponse();
@@ -303,7 +303,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		syncSocket = new SynchronizedSocket(hostname, port);
 		syncSocket.addMessageReceivedHandler(this);
 
-		ControlMessage message = new ControlMessage(ControlMessageType.RMRequestsGSList, hostname, port);
+		ControlMessage message = new ControlMessage(identifier, ControlMessageType.RMRequestsGSList, hostname, port);
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(message, new InetSocketAddress(gridSchedulerHostname, gridSchedulerPort), this, timeout);
 		syncClientSocket.sendMessageInSameThread(message, true);
 
@@ -333,7 +333,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		{
 			for (InetSocketAddress address:controlMessage.getGridSchedulersList()){
 				gsList.put(address, 0);
-				ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.hostname, port);
+				ControlMessage msg = new ControlMessage(identifier, ControlMessageType.ResourceManagerJoin, this.hostname, port);
 				msg.setClock(vClock.getClock());
 				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 				syncClientSocket.sendMessage();
@@ -351,7 +351,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			// RM updates the GS list.
 			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
 				if(!gsList.containsKey(address)) {
-					ControlMessage msg = new ControlMessage(ControlMessageType.ResourceManagerJoin, this.hostname, port);
+					ControlMessage msg = new ControlMessage(identifier, ControlMessageType.ResourceManagerJoin, this.hostname, port);
 					msg.setClock(vClock.getClock());
 					syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
 					syncClientSocket.sendMessage();
@@ -359,7 +359,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				gsList.put(address, 0);
 			}
 
-			ControlMessage replyMessage = new ControlMessage(ControlMessageType.ReplyLoad,hostname,port);
+			ControlMessage replyMessage = new ControlMessage(identifier, ControlMessageType.ReplyLoad,hostname,port);
 			replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size()));
 			//replyMessage.setLoad(((cluster.getNodeCount() + MAX_QUEUE_SIZE) - jobQueue.size())/gsList.size());
 			return replyMessage;
@@ -378,7 +378,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				vClock.incrementClock(identifier);
 				e = new LogEntry(controlMessage.getJob(), "JOB_ARRIVAL_EXT", vClock.getClock());
 				e.setOrigin(controlMessage.getInetAddress());
-				msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
+				msg = new ControlMessage(identifier, ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
 				msg.setClock(vClock.getClock());
 			}
 
@@ -546,11 +546,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private synchronized int[] sendJobEvent(Job job, ControlMessageType messageType) {
 		ControlMessage msg;
 		int[] tempClock;
-		synchronized(this) {
-			msg = new ControlMessage(messageType, job, this.hostname, this.port);
-			tempClock = vClock.incrementClock(this.identifier);
-			msg.setClock(tempClock);
-		}
+		msg = new ControlMessage(identifier, messageType, job, this.hostname, this.port);
+		tempClock = vClock.incrementClock(this.identifier);
+		msg.setClock(tempClock);
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, timeout);
 		syncClientSocket.sendMessage();
 		return tempClock;
