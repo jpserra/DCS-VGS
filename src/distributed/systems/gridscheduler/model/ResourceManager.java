@@ -463,7 +463,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		// if jobAdd fails it will add to the jobQueue again
 		else if (controlMessage.getType() == ControlMessageType.AddJob) {
-			delegatedJobsClock.remove(controlMessage.getJob().getId());
+			LogEntry e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED_FAIL",delegatedJobsClock.remove(controlMessage.getJob().getId()));
+			logger.writeToBinary(e,true);
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) {
 				//System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
