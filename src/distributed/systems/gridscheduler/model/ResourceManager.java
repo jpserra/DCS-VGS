@@ -548,8 +548,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		int[] tempClock;
 		synchronized(this) {
 			msg = new ControlMessage(messageType, job, this.hostname, this.port);
-			vClock.incrementClock(this.identifier);
-			tempClock = vClock.getClock();
+			tempClock = vClock.incrementClock(this.identifier);
 			msg.setClock(tempClock);
 		}
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, timeout);
