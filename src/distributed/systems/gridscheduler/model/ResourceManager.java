@@ -402,7 +402,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				t.purge();
 			}
 
-			LogEntry e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED",delegatedJobsClock.get(controlMessage.getJob().getId()));
+			LogEntry e;
+			synchronized (this) {
+				e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED",delegatedJobsClock.get(controlMessage.getJob().getId()));
+				delegatedJobsClock.remove(controlMessage.getJob().getId());
+			}
+			
 			logger.writeToBinary(e,true);
 
 			return null;
