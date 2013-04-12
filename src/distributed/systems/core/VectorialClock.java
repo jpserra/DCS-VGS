@@ -46,7 +46,7 @@ public class VectorialClock implements Serializable {
 				clock[i] = externalClock[i];
 			}
 		}
-		return clock;
+		return clock.clone();
 	}
 
 	public void setClock(int[] externalClock) {
