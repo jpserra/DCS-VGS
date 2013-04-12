@@ -67,7 +67,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private ConcurrentHashMap<InetSocketAddress, Integer> gsList;
 	
 	//Timers that control the job delegation for each job that was delegated.
-	private ConcurrentHashMap<Long, Timer> jobTimers; 
+	private ConcurrentHashMap<Long, Timer> jobTimers;
+	private ConcurrentHashMap<Long, int[]> delegatedJobsClock;
 
 	// polling frequency, 1hz
 	private long pollSleep = 100;
@@ -119,6 +120,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		
 		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		jobTimers = new ConcurrentHashMap<Long, Timer>();
+		delegatedJobsClock = new ConcurrentHashMap<Long, int[]>();
 
 		running = true;
 		pollingThread = new Thread(this);
@@ -169,26 +171,31 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * </DL>
 	 * @param job the Job to run
 	 */
-	public void addJob(Job job) {
+	public synchronized void addJob(Job job) {
 		// check preconditions
 		assert(job != null) : "the parameter 'job' cannot be null";
 
 		// if the jobqueue is full, offload the job to the grid scheduler
 		if (jobQueue.size() >= cluster.getNodeCount() + MAX_QUEUE_SIZE) {
 
+			int[] tempClock = null;
 			InetSocketAddress address = getRandomGS();
-
+			
+			tempClock = vClock.incrementClock(identifier);
+			
 			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, hostname, port);
-			controlMessage.setClock(vClock.getClock());
+			controlMessage.setClock(tempClock);
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this, timeout);
 			syncClientSocket.sendMessageWithoutResponse();
 
 			// Schedule a timer to deal with the case where a AddJobAck message doesn't arrive in the specified timeout time.
 			Timer t = new Timer();
 			t.schedule(new ScheduledTask(this, controlMessage, address), timeout);
-			System.out.println("JOB "+job.getId()+"sent to [GS "+address.getHostName()+":"+address.getPort()+"] @ "+System.currentTimeMillis());
 			jobTimers.put(job.getId(), t);
-
+			
+			delegatedJobsClock.put(job.getId(), tempClock);
+			
+			System.out.println("JOB "+job.getId()+" sent to [GS "+address.getHostName()+":"+address.getPort()+"] @ "+System.currentTimeMillis());
 			//System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
 
 		} else { // otherwise store it in the local queue
@@ -394,11 +401,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				t.cancel();
 				t.purge();
 			}
-			//TODO Inconsistent log.
-			/*
-			LogEntry e = new LogEntry(controlMessage);
+
+			LogEntry e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED",delegatedJobsClock.get(controlMessage.getJob().getId()));
 			logger.writeToBinary(e,true);
-			*/
 
 			return null;
 		}

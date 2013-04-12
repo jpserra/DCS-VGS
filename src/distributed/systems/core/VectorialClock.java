@@ -30,8 +30,9 @@ public class VectorialClock implements Serializable {
 	 * Increment the clock at a specified ID by one unit
 	 * @param id 
 	 */
-	public synchronized void incrementClock(int id) {
+	public synchronized int[] incrementClock(int id) {
 		clock[id]++;
+		return clock;
 	}
 
 	/**
