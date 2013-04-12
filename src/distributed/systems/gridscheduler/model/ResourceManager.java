@@ -394,9 +394,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				t.cancel();
 				t.purge();
 			}
-			
+			//TODO Inconsistent log.
+			/*
 			LogEntry e = new LogEntry(controlMessage);
 			logger.writeToBinary(e,true);
+			*/
 
 			return null;
 		}
