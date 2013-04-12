@@ -90,8 +90,8 @@ public class LogManager {
 		do {
 			tradeMade = false;
 			for (int i = 0; i < orderedLog.length - 1; i++) {
+				atLeastOne = false;
 				for (int j = 0; j < clockLenght; j++) {
-					atLeastOne = false;
 					if (orderedLog[i].getClock()[j] >= orderedLog[i + 1].getClock()[j]) {
 						if(orderedLog[i].getClock()[j] > orderedLog[i + 1].getClock()[j])
 							atLeastOne = true;
