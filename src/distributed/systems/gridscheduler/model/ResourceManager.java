@@ -51,7 +51,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private Set<Long> finishedOutsideJobs;
 	private Set<Long> finishedOwnJobs;
-	
+
 	private String logfilename = "";
 
 	// timeout to recieve an ACK (response) message
@@ -65,7 +65,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	//GS list with addresses and number of failures for each one
 	private ConcurrentHashMap<InetSocketAddress, Integer> gsList;
-	
+
 	//Timers that control the job delegation for each job that was delegated.
 	private ConcurrentHashMap<Long, Timer> jobTimers;
 	private ConcurrentHashMap<Long, int[]> delegatedJobsClock;
@@ -74,7 +74,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private long pollSleep = 100;
 	private boolean running;
 	private Thread pollingThread;
-	
+
 	//Getter's
 	public Set<Long> getFinishedOutsideJobs() {return finishedOutsideJobs;}
 	public Set<Long> getFinishedOwnJobs() {return finishedOwnJobs;}
@@ -100,12 +100,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.port = cluster.getPort();
 		this.identifier = id;
 		this.nEntities = nEntities;
-		
+
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += hostname+":"+port+".log";
 		this.logger = new LogManager(logfilename);
-		
+
 		if(restart) {
 			LogEntry[] orderedLog = logger.readOrderedLog();
 			//Set the clock to the value where it stopped.
@@ -117,7 +117,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			File file = new File (logfilename);
 			file.delete();
 		}
-		
+
 		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
 		jobTimers = new ConcurrentHashMap<Long, Timer>();
 		delegatedJobsClock = new ConcurrentHashMap<Long, int[]>();
@@ -130,14 +130,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private void getLogInformation(LogEntry[] orderedLog) {
 		// 1. Get Job information from the Log
-		
+
 		// 2. Query each line to fill the structure
-		
+
 		// 3. See which Jobs still need to be computed (job completed flag = 0)
 		// Add the Job ID's to the sets according to the flag own job.
 		finishedOwnJobs = new HashSet<Long>();
 		//finishedOutsideJobs = new HashSet<Long>();
-		
+
 	}
 
 	private class ScheduledTask extends TimerTask implements Runnable {
@@ -171,7 +171,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * </DL>
 	 * @param job the Job to run
 	 */
-	public synchronized void addJob(Job job) {
+	public void addJob(Job job) {
 		// check preconditions
 		assert(job != null) : "the parameter 'job' cannot be null";
 
@@ -180,9 +180,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			int[] tempClock = null;
 			InetSocketAddress address = getRandomGS();
-			
-			tempClock = vClock.incrementClock(identifier);
-			
+
+			tempClock = vClock.incrementClock(identifier).clone();
+
 			ControlMessage controlMessage = new ControlMessage(ControlMessageType.AddJob, job, hostname, port);
 			controlMessage.setClock(tempClock);
 			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this, timeout);
@@ -192,9 +192,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			Timer t = new Timer();
 			t.schedule(new ScheduledTask(this, controlMessage, address), timeout);
 			jobTimers.put(job.getId(), t);
-			
+
 			delegatedJobsClock.put(job.getId(), tempClock);
-			
+
 			System.out.println("JOB "+job.getId()+" sent to [GS "+address.getHostName()+":"+address.getPort()+"] @ "+System.currentTimeMillis());
 			//System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
 
@@ -208,7 +208,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			if(job.getOriginalRM().equals(new InetSocketAddress(hostname, port))) {
 				e = new LogEntry(job, "JOB_ARRIVAL_INT", tempClock);
 			}
-			
+
 			logger.writeToBinary(e,true);
 			scheduleJobs();
 		}
@@ -381,13 +381,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				msg = new ControlMessage(ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
 				msg.setClock(vClock.getClock());
 			}
-			
+
 			logger.writeToBinary(e,true);
 			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, timeout);
 			syncClientSocket.sendMessage();
-			
+
 			scheduleJobs();
-			
+
 			return null;
 
 		}
@@ -403,22 +403,19 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 			LogEntry e;
-			synchronized (this) {
-				e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED",delegatedJobsClock.get(controlMessage.getJob().getId()));
-				delegatedJobsClock.remove(controlMessage.getJob().getId());
-			}
-			
+			e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED",delegatedJobsClock.remove(controlMessage.getJob().getId()));
+
 			logger.writeToBinary(e,true);
 
 			return null;
 		}
-		
+
 		if (controlMessage.getType() == ControlMessageType.JobArrivalAck ||
 				controlMessage.getType() == ControlMessageType.JobCompletedAck ||
 				controlMessage.getType() == ControlMessageType.JobStartedAck) {
 			vClock.updateClock(controlMessage.getClock());
 		}
-		
+
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			System.out.println("SIMULATION OVER:" + controlMessage.getUrl() + " " + controlMessage.getPort());
 			System.out.println("Shutting down...");
@@ -557,7 +554,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		syncClientSocket.sendMessage();
 		return tempClock;
 	}
-	
+
 	public LogEntry[] getFullLog(){
 
 		LogEntry[] log = logger.readOrderedLog();
@@ -582,9 +579,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		return log;
-		
+
 	}
 
 }
