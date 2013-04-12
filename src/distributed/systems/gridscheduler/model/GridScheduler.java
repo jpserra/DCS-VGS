@@ -178,20 +178,20 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					syncClientSocket.sendMessageWithoutResponse();
 				}
 
-				System.out.println("Shutting down in 4 seconds...");
-				System.out.println("Size of the Set: "+finishedJobs.size());
-
-
+				System.out.println("Shutting down in 10 seconds...");
+				
 				try {
-					Thread.sleep(4000);
+					Thread.sleep(10000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				
+				System.out.println("Size of the Set: "+finishedJobs.size());
+				System.out.println("Shutting down now!...");
 
 				//TODO Preparar o LOG
-
-				System.out.println("Shutting down now!...");
+				logger.writeOrderedToTextfile();
 
 				System.exit(0);
 
@@ -235,7 +235,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					for(InetSocketAddress rm : resourceManagerLoad.keySet()) {
 						print += String.format(rm.getHostName()+":"+rm.getPort()+"[%3d]  ",resourceManagerLoad.get(rm));
 						i++;
-						if(i%10==0) {
+						if(i%6==0) {
 							i=0;
 							print += "\n";
 						}
