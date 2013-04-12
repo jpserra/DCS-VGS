@@ -421,6 +421,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			System.out.println("Shutting down...");
 			//TODO Preparar o LOG (ficheiro texto)
 			logger.writeToTextfile();
+			logger.writeOrderedToTextfile();
 			System.exit(0);
 		}
 

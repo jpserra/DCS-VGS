@@ -95,11 +95,12 @@ public class LogManager {
 					if (orderedLog[i].getClock()[j] >= orderedLog[i + 1].getClock()[j]) {
 						if(orderedLog[i].getClock()[j] > orderedLog[i + 1].getClock()[j])
 							atLeastOne = true;
-						if (j == clockLenght-1 && atLeastOne) {
+						if (atLeastOne) {
 							tmpLog = orderedLog[i];
 							orderedLog[i] = orderedLog[i + 1];
 							orderedLog[i + 1] = tmpLog;
 							tradeMade = true;
+							j=clockLenght;
 						}
 					} else {
 						j=clockLenght;
@@ -122,13 +123,39 @@ public class LogManager {
 			reset();
 		}
 	}
-
-
+	
 	public void writeToTextfile() {
+		ArrayList<LogEntry> unorderedLog = readFromBinaryFile();
+		try {
+
+			File file = new File(filename+"_txt_unordered");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			for(LogEntry m : unorderedLog) {
+				bw.write(m.toString() + "\n");
+			}
+
+			bw.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+	public void writeOrderedToTextfile() {
+		// TODO Auto-generated method stub
 		LogEntry[] log = readOrderedLog();
 		try {
 
-			File file = new File(filename+"_readable");
+			File file = new File(filename+"_txt");
 
 			// if file doesnt exists, then create it
 			if (!file.exists()) {
@@ -147,7 +174,6 @@ public class LogManager {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 	}
 
 
