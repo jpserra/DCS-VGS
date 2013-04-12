@@ -324,6 +324,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		ControlMessage controlMessage = (ControlMessage)message;
 		SynchronizedClientSocket syncClientSocket;
 
+		if (controlMessage.getClock() != null) vClock.updateClock(controlMessage.getClock());
+		
 		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
 			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
 		}
@@ -374,7 +376,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			jobQueue.add(controlMessage.getJob());
 			//Now only sends message to the GS from where the message came from.
 			synchronized (this) {
-				vClock.updateClock(controlMessage.getClock());
+				//vClock.updateClock(controlMessage.getClock());
 				vClock.incrementClock(identifier);
 				e = new LogEntry(controlMessage.getJob(), "JOB_ARRIVAL_EXT", vClock.getClock());
 				e.setOrigin(controlMessage.getInetAddress());
@@ -413,7 +415,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.JobArrivalAck ||
 				controlMessage.getType() == ControlMessageType.JobCompletedAck ||
 				controlMessage.getType() == ControlMessageType.JobStartedAck) {
-			vClock.updateClock(controlMessage.getClock());
+			//vClock.updateClock(controlMessage.getClock());
 		}
 
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {

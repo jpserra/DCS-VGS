@@ -126,7 +126,7 @@ public class Simulation implements Runnable {
 			// Add a new job to the system that take up random time
 			Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
 			cId = (int)(Math.random() * (nClusters));
-			clusters[0].getResourceManager().addJob(job);
+			//clusters[0].getResourceManager().addJob(job);
 
 			try {
 				// Sleep a while before creating a new job
