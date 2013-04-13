@@ -11,7 +11,7 @@ public class LogEntry implements Serializable {
 	private static final long serialVersionUID = 8054991011970570003L;
 	private InetSocketAddress origin;
 	//	private Long id; //Generic id can be JobID, ClusterID and GSID
-	private String event; 
+	private LogEntryType event; 
 	private int[] clock;
 	private Job job;
 
@@ -22,48 +22,48 @@ public class LogEntry implements Serializable {
 			this.setJob(message.getJob());
 		switch(message.getType().toString()){
 			case "JobArrival":
-				this.setEvent("JOB_ARRIVAL");
+				this.setEvent(LogEntryType.JOB_ARRIVAL);
 				break;
 			case "JobStarted":
-				this.setEvent("JOB_STARTED");
+				this.setEvent(LogEntryType.JOB_STARTED);
 				break;
 			case "JobCompleted":
-				this.setEvent("JOB_COMPLETED");
+				this.setEvent(LogEntryType.JOB_COMPLETED);
 				break;
 			case "GSLogJobArrival":
-				this.setEvent("JOB_ARRIVAL");
+				this.setEvent(LogEntryType.JOB_ARRIVAL);
 				break;
 			case "GSLogJobStarted":
-				this.setEvent("JOB_STARTED");
+				this.setEvent(LogEntryType.JOB_STARTED);
 				break;
 			case "GSLogJobCompleted":
-				this.setEvent("JOB_COMPLETED");
+				this.setEvent(LogEntryType.JOB_COMPLETED);
 				break;
 			case "AddJobAck":
-				this.setEvent("JOB_SENT");
+				this.setEvent(LogEntryType.JOB_DELEGATED);
 				break;
 			case "RestartRM":
-				this.setEvent("RESTART_RM");
+				this.setEvent(LogEntryType.RESTART_RM);
 				break;
 			case "RestartGS":
-				this.setEvent("RESTART_GS");
+				this.setEvent(LogEntryType.RESTART_GS);
 				break;
-			default: 		this.setEvent(message.getType().toString());
+			default: 		this.setEvent(LogEntryType.UNKNOWN);
 		}
 	}
 
-	public LogEntry(Job j, String event, int[] clock){
+	public LogEntry(Job j, LogEntryType event, int[] clock){
 		this.setOrigin(null);
 		this.setEvent(event);
 		this.setJob(j);
 		this.setClock(clock);
 	}
 
-	public String getEvent() {
+	public LogEntryType getEvent() {
 		return event;
 	}
 
-	public void setEvent(String event) {
+	public void setEvent(LogEntryType event) {
 		this.event = event;
 	}
 
@@ -101,7 +101,7 @@ public class LogEntry implements Serializable {
 			//			s += "ID: " + id + " | ";
 
 			if(event != null)
-				s += "Event: " + event + " | "; 
+				s += "Event: " + event.name() + " | "; 
 
 			if(job != null)
 				s += "Job: " + job.toString() + " | ";

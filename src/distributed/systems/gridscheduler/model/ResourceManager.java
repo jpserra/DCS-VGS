@@ -5,9 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
+import distributed.systems.core.LogEntryType;
 import distributed.systems.core.LogManager;
 import distributed.systems.core.Message;
 import distributed.systems.core.SynchronizedClientSocket;
@@ -45,12 +46,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private String hostname;
 	private int port;
 	private int identifier;
-	private int nEntities;
 	private VectorialClock vClock;
 	private LogManager logger;
 
-	private Set<Long> finishedOutsideJobs;
-	private Set<Long> finishedOwnJobs;
+	private HashMap<Long, Job> outsideJobsToExecute;
+	private HashMap<Long, Job> ownJobsToExecute;
 
 	private String logfilename = "";
 
@@ -60,8 +60,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public static final int MAX_QUEUE_SIZE = 10; 
 
 	// hostname and port (address) of the Grid Scheduler that this RM is supposed to use to connect in the first place.
-	private String gridSchedulerHostname = null;
-	private int gridSchedulerPort;
+	private String gsHostname = null;
+	private int gsPort;
 
 	//GS list with addresses and number of failures for each one
 	private ConcurrentHashMap<InetSocketAddress, Integer> gsList;
@@ -70,16 +70,35 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private ConcurrentHashMap<Long, Timer> jobTimers;
 	private ConcurrentHashMap<Long, int[]> delegatedJobsClock;
 
-	// polling frequency, 1hz
+	// polling frequency
 	private long pollSleep = 100;
 	private boolean running;
 	private Thread pollingThread;
 
 	//Getter's
-	public Set<Long> getFinishedOutsideJobs() {return finishedOutsideJobs;}
-	public Set<Long> getFinishedOwnJobs() {return finishedOwnJobs;}
+	public HashMap<Long, Job> getOutsideJobsToExecute() {return outsideJobsToExecute;}
+	public HashMap<Long, Job> getOwnJobsToExecute() {return ownJobsToExecute;}
 	public ConcurrentHashMap<InetSocketAddress, Integer> getGsList() {return gsList;}
 
+	private class ScheduledTask extends TimerTask implements Runnable {
+		private IMessageReceivedHandler handler;
+		private ControlMessage message;
+		private InetSocketAddress destinationAddress;
+
+		ScheduledTask(IMessageReceivedHandler handler, ControlMessage message, InetSocketAddress destinationAddress){
+			this.handler = handler;
+			this.message = message;
+			this.destinationAddress = destinationAddress;
+		}
+
+		@Override
+		public void run() {
+			System.out.println("TIMEOUT JOB "+message.getJob().getId()+" @ "+System.currentTimeMillis());
+			//System.out.println("TIMEOUT AddJob to "+destinationAddress.getHostName()+":"+destinationAddress.getPort());
+			handler.onReadExceptionThrown(message, destinationAddress);
+		}
+	}
+	
 	/**
 	 * Constructs a new ResourceManager object.
 	 * <P> 
@@ -99,7 +118,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.hostname = cluster.getName();
 		this.port = cluster.getPort();
 		this.identifier = id;
-		this.nEntities = nEntities;
 
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
@@ -129,36 +147,35 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	}
 
 	private void getLogInformation(LogEntry[] orderedLog) {
-		// 1. Get Job information from the Log
-
-		// 2. Query each line to fill the structure
-
-		// 3. See which Jobs still need to be computed (job completed flag = 0)
-		// Add the Job ID's to the sets according to the flag own job.
-		finishedOwnJobs = new HashSet<Long>();
-		//finishedOutsideJobs = new HashSet<Long>();
-
-	}
-
-	private class ScheduledTask extends TimerTask implements Runnable {
-		private IMessageReceivedHandler handler;
-		private ControlMessage message;
-		private InetSocketAddress destinationAddress;
-
-		ScheduledTask(IMessageReceivedHandler handler, ControlMessage message, InetSocketAddress destinationAddress){
-			this.handler = handler;
-			this.message = message;
-			this.destinationAddress = destinationAddress;
+		// 1. Query each entry to fill the structure
+		LogEntryType evt = null;
+		HashMap<Long, LogJobInfo> logInfo = new HashMap<Long, LogJobInfo>();
+		for(LogEntry e : orderedLog) {
+			evt = e.getEvent();
+			if(evt==LogEntryType.JOB_ARRIVAL_INT) {
+				logInfo.put(e.getJob().getId(), new LogJobInfo(e.getJob(), true));
+			} else if (evt==LogEntryType.JOB_ARRIVAL_EXT) {
+				logInfo.put(e.getJob().getId(), new LogJobInfo(e.getJob(), false));
+			} else if (evt==LogEntryType.JOB_COMPLETED) {
+				//Remove the jobs that were completed
+				logInfo.remove(e.getJob().getId());
+			}
+		}
+		
+		// Only the unfinished jobs are present now
+		// 2. Let's define which ones are ours and which ones are from other entities
+		ownJobsToExecute = new HashMap<Long, Job>();
+		outsideJobsToExecute = new HashMap<Long, Job>();
+		for(Entry<Long, LogJobInfo> info : logInfo.entrySet()) {
+			if(info.getValue().isSource()) {
+				ownJobsToExecute.put(info.getKey(),info.getValue().getJob());
+			} else if (!info.getValue().isSource()) {
+				outsideJobsToExecute.put(info.getKey(),info.getValue().getJob());
+			}
 		}
 
-		@Override
-		public void run() {
-			System.out.println("TIMEOUT JOB "+message.getJob().getId()+" @ "+System.currentTimeMillis());
-			//System.out.println("TIMEOUT AddJob to "+destinationAddress.getHostName()+":"+destinationAddress.getPort());
-			handler.onReadExceptionThrown(message, destinationAddress);
-		}
 	}
-
+	
 	/**
 	 * Add a job to the resource manager. If there is a free node in the cluster the job will be
 	 * scheduled onto that Node immediately. If all nodes are busy the job will be put into a local
@@ -203,10 +220,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				System.out.println("JOB "+job.getId()+" added to local queue...");
 			int[] tempClock;
 			tempClock = sendJobEvent(job, ControlMessageType.JobArrival);
-			//TODO Check this
 			LogEntry e = null;
 			if(job.getOriginalRM().equals(new InetSocketAddress(hostname, port))) {
-				e = new LogEntry(job, "JOB_ARRIVAL_INT", tempClock);
+				e = new LogEntry(job, LogEntryType.JOB_ARRIVAL_INT, tempClock);
 			}
 
 			logger.writeToBinary(e,true);
@@ -239,7 +255,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		while ( ((waitingJob = getWaitingJob()) != null) && ((freeNode = cluster.getFreeNode()) != null) ) {
 			freeNode.startJob(waitingJob);
 			tempClock = sendJobEvent(waitingJob,ControlMessageType.JobStarted);
-			LogEntry e = new LogEntry(waitingJob, "JOB_STARTED", tempClock);
+			LogEntry e = new LogEntry(waitingJob, LogEntryType.JOB_STARTED, tempClock);
 			logger.writeToBinary(e,true);
 
 		}
@@ -257,7 +273,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// try to contact a GS in order to inform that a job was completed locally
 		tempClock = sendJobEvent(job,ControlMessageType.JobCompleted);
 		// write in the log that the job was executed
-		LogEntry e = new LogEntry(job, "JOB_COMPLETED", tempClock);
+		LogEntry e = new LogEntry(job, LogEntryType.JOB_COMPLETED, tempClock);
 		logger.writeToBinary(e,true);
 		// job finished, remove it from our pool
 		jobQueue.remove(job);
@@ -267,14 +283,14 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	 * @return the hostname of the grid scheduler this RM connected in the beginning.
 	 */
 	public String getGridSchedulerHostname() {
-		return gridSchedulerHostname;
+		return gsHostname;
 	}
 
 	/**
 	 * @return the port of the grid scheduler this RM connected in the beggining.
 	 */
 	public int getGridSchedulerPort() {
-		return gridSchedulerPort;
+		return gsPort;
 	}
 
 	/**
@@ -296,8 +312,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		assert(gridSchedulerHostname != null) : "the parameter 'gridSchedulerHostname' cannot be null";
 		assert(gridSchedulerPort > 0) : "the parameter 'gridSchedulerPort' cannot be less than or equal to 0";
 
-		this.gridSchedulerHostname = gridSchedulerHostname;
-		this.gridSchedulerPort = gridSchedulerPort;
+		this.gsHostname = gridSchedulerHostname;
+		this.gsPort = gridSchedulerPort;
 
 		SynchronizedSocket syncSocket;
 		syncSocket = new SynchronizedSocket(hostname, port);
@@ -376,9 +392,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			jobQueue.add(controlMessage.getJob());
 			//Now only sends message to the GS from where the message came from.
 			synchronized (this) {
+				//TODO Somethings wrong here?
 				//vClock.updateClock(controlMessage.getClock());
 				vClock.incrementClock(identifier);
-				e = new LogEntry(controlMessage.getJob(), "JOB_ARRIVAL_EXT", vClock.getClock());
+				e = new LogEntry(controlMessage.getJob(), LogEntryType.JOB_ARRIVAL_EXT, vClock.getClock());
 				e.setOrigin(controlMessage.getInetAddress());
 				msg = new ControlMessage(identifier, ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
 				msg.setClock(vClock.getClock());
@@ -405,7 +422,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 			LogEntry e;
-			e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED",delegatedJobsClock.remove(controlMessage.getJob().getId()));
+			e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED,delegatedJobsClock.remove(controlMessage.getJob().getId()));
 
 			logger.writeToBinary(e,true);
 
@@ -421,7 +438,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			System.out.println("SIMULATION OVER:" + controlMessage.getUrl() + " " + controlMessage.getPort());
 			System.out.println("Shutting down...");
-			//TODO Preparar o LOG (ficheiro texto)
 			logger.writeToTextfile();
 			logger.writeOrderedToTextfile();
 			System.exit(0);
@@ -466,7 +482,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		// if jobAdd fails it will add to the jobQueue again
 		else if (controlMessage.getType() == ControlMessageType.AddJob) {
-			LogEntry e = new LogEntry(controlMessage.getJob(),"JOB_DELEGATED_FAIL",delegatedJobsClock.remove(controlMessage.getJob().getId()));
+			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED_FAIL,delegatedJobsClock.remove(controlMessage.getJob().getId()));
 			logger.writeToBinary(e,true);
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) {

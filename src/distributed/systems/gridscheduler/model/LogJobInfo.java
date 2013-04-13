@@ -2,21 +2,15 @@ package distributed.systems.gridscheduler.model;
 
 public class LogJobInfo {
 
-	
-	private long id;
+	private Job job;
 	private boolean source;
 
-	public LogJobInfo(long id, boolean source) {
-		this.id = id;
+	public LogJobInfo(Job job, boolean source) {
+		this.job = job;
 		this.source = source;
 	}
 
-	public long getId() {
-		return id;
-	}
-
-	public void setSource(boolean source) {
-		this.source = source;
-	}
+	public Job getJob() {return job;}
+	public boolean isSource() {return source;}
 
 }

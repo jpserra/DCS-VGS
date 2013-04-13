@@ -5,13 +5,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
 import distributed.systems.core.LogManager;
@@ -37,9 +35,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private ConcurrentLinkedQueue<Job> jobQueue;
 
 	private int identifier;
-
-	// (max) number of entities (GS and RM/Clusters) present in the simulation
-	private int nEntities;
 
 	// number of jobs to be executed in the simulation
 	private int nJobs;
@@ -205,7 +200,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		this.port = port;
 		this.identifier = id;
 		this.nJobs = nJobs;
-		this.nEntities = nEntities;
 		this.logfilename += "GS_" + id +".log";
 		this.handler = this;
 

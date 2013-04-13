@@ -2,11 +2,8 @@ package distributed.systems.gridscheduler.model;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import distributed.systems.core.LogEntry;
-import distributed.systems.core.LogManager;
 
 /**
  * 
@@ -18,15 +15,13 @@ import distributed.systems.core.LogManager;
  */
 public class Cluster implements Runnable {
 
+	public static final int JOBID_MULTIPLICATION_FACTOR = 100000; 
+	
 	private List <Node> nodes;
 	private ResourceManager resourceManager;
 	private String hostname;
 	private int port;
 	private int id;
-	private int nJobsToExecute;
-	private boolean restart;
-
-	private Set<Long> finishedJobs;
 
 	// polling frequency, 10hz
 	private long pollSleep = 100;
@@ -62,12 +57,10 @@ public class Cluster implements Runnable {
 		this.id = id;
 		this.hostname = hostname;
 		this.port = port;
-		this.nJobsToExecute = nJobsToExecute;
-		this.restart = restart;
 		this.nodes = new ArrayList<Node>(nodeCount);
 		
-		final String hostnameRM = hostname;
-		final int portRM = port;
+		final String rmHostname = hostname;
+		final int rmPort = port;
 
 		// Initialize the resource manager for this cluster
 		resourceManager = new ResourceManager(id, nEntities,this, restart);
@@ -84,7 +77,7 @@ public class Cluster implements Runnable {
 
 		try {
 			System.out.println(resourceManager.getGsList()+"\n5 seconds to start generating jobs...");
-			Thread.sleep(4000L);
+			Thread.sleep(5000L);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -92,23 +85,25 @@ public class Cluster implements Runnable {
 		System.out.println(resourceManager.getGsList());
 		
 		if(restart) {
-			// Launch the thread with the JobID verification upon generation.
-			//TODO Needs to be changed
-			Thread createJobs = new Thread(new Runnable() {
+			// Get the Jobs that need to be executed from the analysis of the Log
+			final HashMap<Long, Job> outsideJobsToExecute = resourceManager.getOutsideJobsToExecute();
+			final HashMap<Long, Job> ownJobsToExecute = resourceManager.getOwnJobsToExecute();
+			// Create the thread that will add the local Jobs that were not completed
+			Thread createOwnJobs = new Thread(new Runnable() {
 				public void run() {
-					int jobId = id*100000;
+					int jobId = id*JOBID_MULTIPLICATION_FACTOR;
 					for(int i = 0; i < nJobsToExecute; i++) {
 						jobId++;
-						if(finishedJobs.contains(jobId)) {
-							System.out.println("|---IGNORED JOB---|: "+jobId);
+						if(ownJobsToExecute.containsKey(jobId)) {
+							System.out.println("IGNORED JOB! JobID: "+jobId);
 							continue;
 						}
 						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
-						job.setOriginalRM(new InetSocketAddress(hostnameRM, portRM));
+						job.setOriginalRM(new InetSocketAddress(rmHostname, rmPort));
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(20L);
+							Thread.sleep(50L);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -116,20 +111,37 @@ public class Cluster implements Runnable {
 					}
 				}
 			});
-			createJobs.start();
+			// Create the thread that will add the outside jobs that were not completed
+			Thread createOutsideJobs = new Thread(new Runnable() {
+				public void run() {
+					for(Job job : outsideJobsToExecute.values()) {
+						getResourceManager().addJob(job);
+						// Sleep a while before creating a new job
+						try {
+							Thread.sleep(50L);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}	
+					}
+				}
+			});
+			// Start the two threads that will generate the needed Jobs
+			createOwnJobs.start();
+			createOutsideJobs.start();
 		}
 		// Launch the thread normally.
 		else {
 			Thread createJobs = new Thread(new Runnable() {
 				public void run() {
-					int jobId = id*100000;
+					int jobId = id*JOBID_MULTIPLICATION_FACTOR;
 					for(int i = 0; i < nJobsToExecute; i++) {
 						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId++);
-						job.setOriginalRM(new InetSocketAddress(hostnameRM, portRM));
+						job.setOriginalRM(new InetSocketAddress(rmHostname, rmPort));
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(20L);
+							Thread.sleep(25L);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
