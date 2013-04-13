@@ -45,7 +45,13 @@ public class LogEntry implements Serializable {
 			case "RestartRM":
 				this.setEvent(LogEntryType.RESTART_RM);
 				break;
+			case "GSLogRestartRM":
+				this.setEvent(LogEntryType.RESTART_RM);
+				break;
 			case "RestartGS":
+				this.setEvent(LogEntryType.RESTART_GS);
+				break;
+			case "GSLogRestartGS":
 				this.setEvent(LogEntryType.RESTART_GS);
 				break;
 			default: 		this.setEvent(LogEntryType.UNKNOWN);
