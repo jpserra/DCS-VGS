@@ -384,7 +384,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			logger.writeToBinary(new LogEntry(controlMessage),true);
 			synchronizeWithAllGS(msgLog);
 
-			if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
+			//if(!controlMessage.getJob().getOriginalRM().equals(controlMessage.getInetAddress())) {
 				// Prepare a different message but mantain the clock.
 				synchronized(this) {
 					msgOpt = new ControlMessage(identifier, ControlMessageType.AddJobAck, controlMessage.getJob(), hostname, port);
@@ -392,7 +392,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 				syncClientSocket = new SynchronizedClientSocket(msgOpt, controlMessage.getJob().getOriginalRM(), this, timeout);
 				syncClientSocket.sendMessageWithoutResponse();			
-			}
+			//}
 
 			//TODO Enviar esta mensagem antes de enviar o AddJobAck??
 			return msg;
