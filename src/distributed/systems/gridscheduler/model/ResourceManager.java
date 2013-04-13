@@ -50,7 +50,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private LogManager logger;
 
 	private HashMap<Long, Job> outsideJobsToExecute;
-	private HashMap<Long, Job> ownJobsToExecute;
+	private HashMap<Long, Job> ownJobsToIgnore;
 
 	private String logfilename = "";
 
@@ -77,7 +77,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	//Getter's
 	public HashMap<Long, Job> getOutsideJobsToExecute() {return outsideJobsToExecute;}
-	public HashMap<Long, Job> getOwnJobsToExecute() {return ownJobsToExecute;}
+	public HashMap<Long, Job> getOwnJobsToIgnore() {return ownJobsToIgnore;}
 	public ConcurrentHashMap<InetSocketAddress, Integer> getGsList() {return gsList;}
 
 	private class ScheduledTask extends TimerTask implements Runnable {
@@ -150,6 +150,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// 1. Query each entry to fill the structure
 		LogEntryType evt = null;
 		HashMap<Long, LogJobInfo> logInfo = new HashMap<Long, LogJobInfo>();
+		ownJobsToIgnore = new HashMap<Long, Job>();
+		outsideJobsToExecute = new HashMap<Long, Job>();
+		LogJobInfo aux;
 		for(LogEntry e : orderedLog) {
 			evt = e.getEvent();
 			if(evt==LogEntryType.JOB_ARRIVAL_INT) {
@@ -157,23 +160,24 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			} else if (evt==LogEntryType.JOB_ARRIVAL_EXT) {
 				logInfo.put(e.getJob().getId(), new LogJobInfo(e.getJob(), false));
 			} else if (evt==LogEntryType.JOB_COMPLETED) {
-				//Remove the jobs that were completed
+				aux = logInfo.get(e.getJob().getId());
+				if(aux != null) {
+					if(aux.isSource()) {
+						ownJobsToIgnore.put(aux.getJob().getId(), aux.getJob());
+					}
+				}
 				logInfo.remove(e.getJob().getId());
 			}
 		}
 		
 		// Only the unfinished jobs are present now
 		// 2. Let's define which ones are ours and which ones are from other entities
-		ownJobsToExecute = new HashMap<Long, Job>();
-		outsideJobsToExecute = new HashMap<Long, Job>();
 		for(Entry<Long, LogJobInfo> info : logInfo.entrySet()) {
-			if(info.getValue().isSource()) {
-				ownJobsToExecute.put(info.getKey(),info.getValue().getJob());
-			} else if (!info.getValue().isSource()) {
+			if (!info.getValue().isSource()) {
 				outsideJobsToExecute.put(info.getKey(),info.getValue().getJob());
 			}
 		}
-		System.out.println("Own Jobs: "+ownJobsToExecute.keySet());
+		System.out.println("Own Jobs: "+ownJobsToIgnore.keySet());
 		System.out.println("Outside Jobs: "+outsideJobsToExecute.keySet());
 	}
 	
