@@ -174,6 +174,32 @@ public class LogManager {
 			e.printStackTrace();
 		}
 	}
+	
+	public void writeOrderedRestartToTextfile() {
+		// TODO Auto-generated method stub
+		LogEntry[] log = readOrderedLog();
+		try {
+
+			File file = new File(filename+"_txt_beforeRestart");
+
+			// if file doesnt exists, then create it
+			if (!file.exists()) {
+				file.createNewFile();
+			}
+
+			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			BufferedWriter bw = new BufferedWriter(fw);
+
+			for(LogEntry m : log) {
+				bw.write(m.toString() + "\n");
+			}
+
+			bw.close();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
 
 }

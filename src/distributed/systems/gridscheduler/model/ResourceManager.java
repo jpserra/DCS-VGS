@@ -129,6 +129,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//Set the clock to the value where it stopped.
 			vClock.setIndexValue(id, orderedLog[orderedLog.length-1].getClock()[id]);
 			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
+			logger.writeOrderedRestartToTextfile();
 			getLogInformation(orderedLog);
 		}
 		else {
@@ -400,7 +401,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				//TODO Somethings wrong here?
 				//vClock.updateClock(controlMessage.getClock());
 				vClock.incrementClock(identifier);
-				e = new LogEntry(controlMessage.getJob(), LogEntryType.JOB_ARRIVAL_EXT, vClock.getClock());
+				if(controlMessage.getJob().getId()/100000==identifier)
+					e = new LogEntry(controlMessage.getJob(), LogEntryType.JOB_ARRIVAL_INT, vClock.getClock());
+				else
+					e = new LogEntry(controlMessage.getJob(), LogEntryType.JOB_ARRIVAL_EXT, vClock.getClock());
 				e.setOrigin(controlMessage.getInetAddress());
 				msg = new ControlMessage(identifier, ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
 				msg.setClock(vClock.getClock());
