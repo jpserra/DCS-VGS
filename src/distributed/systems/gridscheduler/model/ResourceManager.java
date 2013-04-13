@@ -361,7 +361,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		}
 
 		// When Resource manager receives the list of all GS available from the GS that was given when this RM was initialized. The RM will try to join each of the GS
-		else if (controlMessage.getType() == ControlMessageType.ReplyGSList)
+		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
 			for (InetSocketAddress address:controlMessage.getGridSchedulersList()){
 				gsList.put(address, 0);
@@ -373,12 +373,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		}
 
 		// ResourceManager receives ack that the GS added them to theirs GS list.
-		else if (controlMessage.getType() == ControlMessageType.ResourceManagerJoinAck)
+		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoinAck)
 		{
 			//Handled on exception if it doesn't receives ack
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.RequestLoad)
+		if (controlMessage.getType() == ControlMessageType.RequestLoad)
 		{
 			// RM updates the GS list.
 			for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
@@ -398,7 +398,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		}
 
 		// RM receives add Job from a GS
-		else if (controlMessage.getType() == ControlMessageType.AddJob)
+		if (controlMessage.getType() == ControlMessageType.AddJob)
 		{
 			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+" with JobID "+controlMessage.getJob().getId()+"\n");
 			ControlMessage msg;
@@ -425,7 +425,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.AddJobAck)
+		if (controlMessage.getType() == ControlMessageType.AddJobAck)
 		{
 
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
@@ -443,13 +443,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			return null;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.JobArrivalAck ||
+		if (controlMessage.getType() == ControlMessageType.JobArrivalAck ||
 				controlMessage.getType() == ControlMessageType.JobCompletedAck ||
 				controlMessage.getType() == ControlMessageType.JobStartedAck) {
 			//vClock.updateClock(controlMessage.getClock());
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.SimulationOver) {
+		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			synchronized (this) {
 				System.out.println("Simulation is over:" + controlMessage.getUrl() + " " + controlMessage.getPort());
 				System.out.println("Shutting down...");
@@ -497,12 +497,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		}
 
 		// RM keeps trying to get the GS list from the GS that was provided
-		else if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
+		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
 			return controlMessage;
 		}
 
 		// if jobAdd fails it will add to the jobQueue again
-		else if (controlMessage.getType() == ControlMessageType.AddJob) {
+		if (controlMessage.getType() == ControlMessageType.AddJob) {
 			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED_FAIL,delegatedJobsClock.remove(controlMessage.getJob().getId()));
 			logger.writeToBinary(e,true);
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
@@ -515,7 +515,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			addJob(controlMessage.getJob());
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.JobArrival ||
+		if (controlMessage.getType() == ControlMessageType.JobArrival ||
 				controlMessage.getType() == ControlMessageType.JobStarted ||
 				controlMessage.getType() == ControlMessageType.JobCompleted) {
 			// Send log message to a randomly chosen GS.

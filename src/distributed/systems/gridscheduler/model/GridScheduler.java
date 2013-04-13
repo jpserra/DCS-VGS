@@ -309,7 +309,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			rmList.put(controlMessage.getInetAddress(), 0);
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.ReplyGSList)
+		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
 			synchronized (gridSchedulersList) {
 				for(InetSocketAddress address : controlMessage.getGridSchedulersList()) {
@@ -319,13 +319,13 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			System.out.println(gridSchedulersList);
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
+		if (controlMessage.getType() == ControlMessageType.RMRequestsGSList) {
 			msg = new ControlMessage(identifier, ControlMessageType.ReplyGSList, hostname, port);
 			msg.setGridSchedulersList(gridSchedulersList.keySet());
 			return msg;
 		}		
 
-		else if (controlMessage.getType() == ControlMessageType.GSRequestsGSList) {
+		if (controlMessage.getType() == ControlMessageType.GSRequestsGSList) {
 			gridSchedulersList.put(controlMessage.getInetAddress(),0);
 			msg = new ControlMessage(identifier, ControlMessageType.ReplyGSList, hostname, port);
 			msg.setGridSchedulersList(gridSchedulersList.keySet());	
@@ -338,7 +338,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.RestartRM) {
+		if (controlMessage.getType() == ControlMessageType.RestartRM) {
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msgLog = new ControlMessage(identifier, ControlMessageType.GSLogRestartRM, hostname, port, controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.RestartRMAck, hostname, port, tempVC);
@@ -347,7 +347,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.RestartGS) {
+		if (controlMessage.getType() == ControlMessageType.RestartGS) {
 			gridSchedulersList.put(controlMessage.getInetAddress(),0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msgLog = new ControlMessage(identifier, ControlMessageType.GSLogRestartGS, hostname, port, controlMessage.getClock());
@@ -357,7 +357,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.RestartGSAck) {
+		if (controlMessage.getType() == ControlMessageType.RestartGSAck) {
 			vClock.updateClock(controlMessage.getClock());
 			logger.writeToBinary(new LogEntry(controlMessage),true);
 			return null;
@@ -366,7 +366,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// resource manager wants to offload a job to us
 		// there is no need to log because the RM is waiting for an ACK.
 		// The ACK message will only be sent when the Job is delegated to another RM.
-		else if (controlMessage.getType() == ControlMessageType.AddJob) {
+		if (controlMessage.getType() == ControlMessageType.AddJob) {
 			// Tries to add the RM to the list if this was not there already.
 			rmList.put(controlMessage.getInetAddress(), 0);
 			if(!resourceManagerLoad.containsKey(controlMessage.getInetAddress())) {
@@ -376,7 +376,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			jobQueue.add(controlMessage.getJob());
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.JobArrival) {			
+		if (controlMessage.getType() == ControlMessageType.JobArrival) {			
 			rmList.put(controlMessage.getInetAddress(), 0);
 
 			tempVC = vClock.updateClock(controlMessage.getClock());
@@ -397,7 +397,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.GSLogJobArrival) {
+		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival) {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.GSLogJobArrivalAck, hostname, port,tempVC);
@@ -405,7 +405,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.JobStarted) {
+		if (controlMessage.getType() == ControlMessageType.JobStarted) {
 			rmList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobStarted, controlMessage.getJob(), hostname, port, controlMessage.getClock());
@@ -415,7 +415,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.GSLogJobStarted) {
+		if (controlMessage.getType() == ControlMessageType.GSLogJobStarted) {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.GSLogJobStartedAck, hostname, port,tempVC);
@@ -423,7 +423,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.JobCompleted) {
+		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
 			rmList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobCompleted, controlMessage.getJob(), hostname, port, controlMessage.getClock());
@@ -438,7 +438,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.GSLogJobCompleted) {
+		if (controlMessage.getType() == ControlMessageType.GSLogJobCompleted) {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.GSLogJobCompletedAck, controlMessage.getJob(), hostname, port, tempVC);
@@ -449,7 +449,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.RestartGS) {
+		if (controlMessage.getType() == ControlMessageType.RestartGS) {
 			vClock.updateClock(controlMessage.getClock());
 			msgLog = new ControlMessage(identifier, ControlMessageType.GSLogRestartGS, controlMessage.getJob(), hostname, port, controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.RestartGSAck, hostname, port, vClock.getClock());
@@ -458,7 +458,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.GSLogRestartGS) {
+		if (controlMessage.getType() == ControlMessageType.GSLogRestartGS) {
 			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
 			vClock.updateClock(controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.GSLogRestartGSAck, hostname, port, controlMessage.getClock());
@@ -469,13 +469,13 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// resource manager wants to join this grid scheduler 
 		// when a new RM is added, its load is set to Integer.MAX_VALUE to make sure
 		// no jobs are scheduled to it until we know the actual load
-		else if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
+		if (controlMessage.getType() == ControlMessageType.ResourceManagerJoin) {
 			resourceManagerLoad.put(controlMessage.getInetAddress(), 0);
 			rmList.put(controlMessage.getInetAddress(), 0);
 			return new ControlMessage(identifier, ControlMessageType.ResourceManagerJoinAck, hostname, port, vClock.updateClock(controlMessage.getClock()));
 		}
 		
-		else if (controlMessage.getType() == ControlMessageType.SimulationOver) {
+		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			synchronized (this) {
 				if(restart) {
 					System.out.println("Shutting down in 2 seconds...");
@@ -544,18 +544,18 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			}
 		} 
 
-		else if (controlMessage.getType() == ControlMessageType.RequestLoad) {
+		if (controlMessage.getType() == ControlMessageType.RequestLoad) {
 			checkRMFailures(destinationAddress);
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.GSLogJobArrival ||
+		if (controlMessage.getType() == ControlMessageType.GSLogJobArrival ||
 				controlMessage.getType() == ControlMessageType.GSLogJobCompleted ||
 				controlMessage.getType() == ControlMessageType.GSLogJobStarted){
 			if(checkGSFailures(destinationAddress))
 				return controlMessage;
 		}
 
-		else if (controlMessage.getType() == ControlMessageType.RestartGS) {
+		if (controlMessage.getType() == ControlMessageType.RestartGS) {
 			return controlMessage;
 		}
 
