@@ -88,6 +88,8 @@ public class Cluster implements Runnable {
 			// Get the Jobs that need to be executed from the analysis of the Log
 			final HashMap<Long, Job> outsideJobsToExecute = resourceManager.getOutsideJobsToExecute();
 			final HashMap<Long, Job> ownJobsToIgnore = resourceManager.getOwnJobsToIgnore();
+			System.out.println("Start generation. Ignore these jobs:\n"+ownJobsToIgnore);
+			System.out.println("Start generation. Run these jobs:\n"+ownJobsToIgnore);
 			// Create the thread that will add the local Jobs that were not completed
 			Thread createOwnJobs = new Thread(new Runnable() {
 				public void run() {

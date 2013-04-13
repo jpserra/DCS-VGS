@@ -178,8 +178,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				outsideJobsToExecute.put(info.getKey(),info.getValue().getJob());
 			}
 		}
-		System.out.println("Own Jobs: "+ownJobsToIgnore.keySet());
-		System.out.println("Outside Jobs: "+outsideJobsToExecute.keySet());
+		System.out.println("Own Jobs Finished: "+ownJobsToIgnore.keySet());
+		System.out.println("Outside Jobs to Execute: "+outsideJobsToExecute.keySet());
 	}
 	
 	/**
