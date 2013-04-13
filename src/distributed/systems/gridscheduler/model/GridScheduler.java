@@ -340,6 +340,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			return msg;
 		}
 
+		if (controlMessage.getType() == ControlMessageType.GSLogRestartRM) {
+			gridSchedulersList.put(controlMessage.getInetAddress(), 0);
+			tempVC = vClock.updateClock(controlMessage.getClock());
+			msg = new ControlMessage(identifier, ControlMessageType.GSLogRestartRMAck, hostname, port,tempVC);
+			logger.writeToBinary(new LogEntry(controlMessage),true);
+			return msg;
+		}
+		
 		if (controlMessage.getType() == ControlMessageType.RestartRM) {
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msgLog = new ControlMessage(identifier, ControlMessageType.GSLogRestartRM, hostname, port, controlMessage.getClock());
