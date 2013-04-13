@@ -97,7 +97,7 @@ public class Cluster implements Runnable {
 					for(int i = 0; i < nJobsToExecute; i++) {
 						System.out.println("Job Generated: "+jobId);
 						jobId++;
-						if(ownJobsToIgnore.containsKey((long)jobId)) {
+						if(ownJobsToIgnore.containsKey(new Long(jobId))) {
 							System.out.println("IGNORED JOB! JobID: "+jobId);
 							continue;
 						}
