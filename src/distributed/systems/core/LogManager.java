@@ -43,10 +43,6 @@ public class LogManager {
 	}
 
 	public ArrayList<LogEntry> readFromBinaryFile (){
-		//teste
-		System.out.println("##############################################################");
-		System.out.println("Criar file para ler binário: "+filename);
-		System.out.println("##############################################################");
 		File file = new File (filename);
 		ArrayList<LogEntry> recoveredLog = new ArrayList<LogEntry>();
 		if (file.exists ()){
@@ -73,7 +69,6 @@ public class LogManager {
 		return recoveredLog;
 	}
 
-	//FOR RESOURCE MANAGERS!
 	//Gets the Log ordered by clocks
 	public LogEntry[] readOrderedLog (){
 
@@ -113,7 +108,6 @@ public class LogManager {
 
 		return orderedLog;
 	}
-
 
 	private static class AppendableObjectOutputStream extends ObjectOutputStream {
 		public AppendableObjectOutputStream(OutputStream out) throws IOException {
@@ -203,6 +197,4 @@ public class LogManager {
 			e.printStackTrace();
 		}
 	}
-
-
 }

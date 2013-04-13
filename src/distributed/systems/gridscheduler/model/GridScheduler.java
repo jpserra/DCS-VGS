@@ -60,6 +60,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private ConcurrentHashMap<InetSocketAddress, Integer> rmList;
 
 	private Set<Long> finishedJobs;
+	private Thread showInfoThread;
 
 	// polling frequency of the thread that checks if the simulation is over
 	private long checkThreadPollSleep = 1000;
@@ -163,6 +164,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					}
 				}
 				pollingThread.interrupt();
+				showInfoThread.interrupt();
 
 				System.out.println("GS <"+hostname+":"+port+">: Simulation is over!");
 				ControlMessage message;
@@ -228,7 +230,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		launchCheckThread();
 
 		//TODO Remove if we don't want to see updates
-		Thread createJobs = new Thread(new Runnable() {
+		showInfoThread = new Thread(new Runnable() {
 			public void run() {
 				while(true) {
 					int i = 0;
@@ -251,7 +253,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 			}
 		});
-		createJobs.start();
+		showInfoThread.start();
 
 	}
 

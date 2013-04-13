@@ -231,15 +231,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
 
 		} else { // otherwise store it in the local queue
-			if(jobQueue.add(job))
-				System.out.println("JOB "+job.getId()+" added to local queue...");
+			jobQueue.add(job);
 			int[] tempClock = sendJobEvent(job, ControlMessageType.JobArrival);
 			LogEntry e = null;
 			if(job.getOriginalRM().equals(new InetSocketAddress(hostname, port))) {
 				e = new LogEntry(job, LogEntryType.JOB_ARRIVAL_INT, tempClock);
-			} else
-				System.out.println("##################################### ERRO #############################");
-			
+			}
 			logger.writeToBinary(e,true);
 			scheduleJobs();
 		}
