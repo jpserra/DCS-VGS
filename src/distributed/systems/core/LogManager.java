@@ -44,6 +44,9 @@ public class LogManager {
 
 	public ArrayList<LogEntry> readFromBinaryFile (){
 		//teste
+		System.out.println("##############################################################");
+		System.out.println("Criar file para ler binário: "+filename);
+		System.out.println("##############################################################");
 		File file = new File (filename);
 		ArrayList<LogEntry> recoveredLog = new ArrayList<LogEntry>();
 		if (file.exists ()){

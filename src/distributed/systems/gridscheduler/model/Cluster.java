@@ -58,9 +58,6 @@ public class Cluster implements Runnable {
 		this.rmHostname = hostname;
 		this.rmPort = port;
 		this.nodes = new ArrayList<Node>(nodeCount);
-		
-		final String rmHostname = hostname;
-		final int rmPort = port;
 
 		// Initialize the resource manager for this cluster
 		resourceManager = new ResourceManager(id, nEntities,this, restart);
@@ -192,7 +189,7 @@ public class Cluster implements Runnable {
 	 * @return the hostname of the cluster
 	 */
 	public String getName() {
-		return rmHostname;
+		return this.rmHostname;
 	}
 
 	/**
