@@ -60,7 +60,7 @@ public class Cluster implements Runnable {
 		this.nodes = new ArrayList<Node>(nodeCount);
 
 		// Initialize the resource manager for this cluster
-		resourceManager = new ResourceManager(id, nEntities,this, restart);
+		resourceManager = new ResourceManager(id, nEntities,this, restart, gridSchedulerHostname, gridSchedulerPort);
 
 		// Initialize the nodes 
 		for (int i = 0; i < nodeCount; i++) {
@@ -85,8 +85,8 @@ public class Cluster implements Runnable {
 			// Get the Jobs that need to be executed from the analysis of the Log
 			final HashMap<Long, Job> outsideJobsToExecute = resourceManager.getOutsideJobsToExecute();
 			final HashMap<Long, Job> ownJobsToIgnore = resourceManager.getOwnJobsToIgnore();
-			System.out.println("Start generation. Ignore these jobs:\n"+ownJobsToIgnore);
-			System.out.println("Start generation. Run these jobs:\n"+outsideJobsToExecute);
+			System.out.println("Internal Jobs to be ignored (already compeleted)\n"+ownJobsToIgnore);
+			System.out.println("External Jobs to be generated:\n"+outsideJobsToExecute);
 			// Create the thread that will add the local Jobs that were not completed
 			Thread createOwnJobs = new Thread(new Runnable() {
 				public void run() {
