@@ -131,6 +131,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
 			logger.writeOrderedRestartToTextfile();
 			getLogInformation(orderedLog);
+			File file = new File (logfilename);
+			file.delete();
 		}
 		else {
 			File file = new File (logfilename);
