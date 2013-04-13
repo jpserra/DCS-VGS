@@ -584,8 +584,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		synchronized (resourceManagerLoad) {
 			for (InetSocketAddress key : resourceManagerLoad.keySet())
 			{
-				if(key.equals(ignoreAddress))
-					continue;
+//				if(key.equals(ignoreAddress))
+//					continue;
 				if (resourceManagerLoad.get(key) > maxFreeNodes)
 				{
 					maxFreeNodes = resourceManagerLoad.get(key);

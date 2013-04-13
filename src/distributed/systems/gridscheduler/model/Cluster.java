@@ -19,9 +19,9 @@ public class Cluster implements Runnable {
 	
 	private List <Node> nodes;
 	private ResourceManager resourceManager;
-	private String hostname;
-	private int port;
-	private int id;
+	private String rmHostname;
+	private final int rmPort;
+	private final int id;
 
 	// polling frequency, 10hz
 	private long pollSleep = 100;
@@ -55,8 +55,8 @@ public class Cluster implements Runnable {
 
 		// Initialize members
 		this.id = id;
-		this.hostname = hostname;
-		this.port = port;
+		this.rmHostname = hostname;
+		this.rmPort = port;
 		this.nodes = new ArrayList<Node>(nodeCount);
 		
 		final String rmHostname = hostname;
@@ -118,6 +118,7 @@ public class Cluster implements Runnable {
 			Thread createOutsideJobs = new Thread(new Runnable() {
 				public void run() {
 					for(Job job : outsideJobsToExecute.values()) {
+						job.setOriginalRM(new InetSocketAddress(rmHostname,rmPort));
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
@@ -191,7 +192,7 @@ public class Cluster implements Runnable {
 	 * @return the hostname of the cluster
 	 */
 	public String getName() {
-		return hostname;
+		return rmHostname;
 	}
 
 	/**
@@ -199,7 +200,7 @@ public class Cluster implements Runnable {
 	 * @return the port of the cluster
 	 */
 	public int getPort() {
-		return this.port;
+		return this.rmPort;
 	}
 
 	/**
