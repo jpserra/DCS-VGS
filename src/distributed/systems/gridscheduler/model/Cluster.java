@@ -85,17 +85,15 @@ public class Cluster implements Runnable {
 			// Get the Jobs that need to be executed from the analysis of the Log
 			final HashMap<Long, Job> outsideJobsToExecute = resourceManager.getOutsideJobsToExecute();
 			final HashMap<Long, Job> ownJobsToIgnore = resourceManager.getOwnJobsToIgnore();
-			System.out.println("Internal Jobs to be ignored (already compeleted)\n"+ownJobsToIgnore);
-			System.out.println("External Jobs to be generated:\n"+outsideJobsToExecute);
+			System.out.println("Internal Jobs to be ignored (already compeleted)\n"+ownJobsToIgnore.keySet());
+			System.out.println("External Jobs to be generated:\n"+outsideJobsToExecute.keySet());
 			// Create the thread that will add the local Jobs that were not completed
 			Thread createOwnJobs = new Thread(new Runnable() {
 				public void run() {
 					int jobId = id*JOBID_MULTIPLICATION_FACTOR;
 					for(int i = 0; i < nJobsToExecute; i++) {
-						System.out.println("Job Generated: "+jobId);
 						jobId++;
 						if(ownJobsToIgnore.containsKey(new Long(jobId))) {
-							System.out.println("IGNORED JOB! JobID: "+jobId);
 							continue;
 						}
 						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
