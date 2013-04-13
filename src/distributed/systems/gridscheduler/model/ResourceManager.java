@@ -173,7 +173,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				outsideJobsToExecute.put(info.getKey(),info.getValue().getJob());
 			}
 		}
-
+		System.out.println("Own Jobs: "+ownJobsToExecute.keySet());
+		System.out.println("Outside Jobs: "+outsideJobsToExecute.keySet());
 	}
 	
 	/**
@@ -212,7 +213,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			delegatedJobsClock.put(job.getId(), tempClock);
 
-			System.out.println("JOB "+job.getId()+" sent to [GS "+address.getHostName()+":"+address.getPort()+"] @ "+System.currentTimeMillis());
+			//System.out.println("JOB "+job.getId()+" sent to [GS "+address.getHostName()+":"+address.getPort()+"] @ "+System.currentTimeMillis());
 			//System.out.println("[RM "+cluster.getID()+"] Job sent to [GS "+address.getHostName()+":"+address.getPort()+"]\n");
 
 		} else { // otherwise store it in the local queue
@@ -416,7 +417,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if(t != null) {
-				System.out.println("AddJobAck --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				//System.out.println("AddJobAck --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
 				t.cancel();
 				t.purge();
 			}
