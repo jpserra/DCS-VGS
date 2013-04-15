@@ -650,7 +650,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		while (running) {
 			// send a message to each resource manager, requesting its load
-			long initialTime = System.currentTimeMillis();
 			for (InetSocketAddress inetAdd : resourceManagerLoad.keySet())
 			{
 				ControlMessage cMessage = new ControlMessage(identifier, ControlMessageType.RequestLoad);
@@ -687,9 +686,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 
 			}
-			
-			long finalTime = System.currentTimeMillis() - initialTime;
-			System.out.println("POOL THREAD EXECUTION TIME (ms): "+finalTime);
 
 			// sleep
 			try

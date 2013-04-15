@@ -52,7 +52,6 @@ public class SynchronizedSocket extends Thread {
 
 			} catch (IOException | ClassNotFoundException e) {
 				//TODO Pode falhar aqui?
-				System.out.println("############# EXCEPTION HERE!");
 				e.printStackTrace();
 			}	
 		}
@@ -66,6 +65,7 @@ public class SynchronizedSocket extends Thread {
 				Thread t = new ConnectionHandler(s, handler);
 				t.start();
 			} catch (IOException e) {
+				System.out.println("#$%#$%#$%#$%#%#$%#%#$%# SERVER SOCKET EXCEPTION... in accept");
 				e.printStackTrace();
 			}
 		}		
