@@ -57,7 +57,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private String logfilename = "";
 
 	// timeout to recieve an ACK (response) message
-	private final int timeout = 2000;
+	private static final int TIMEOUT = 3000;
 
 	public static final int MAX_QUEUE_SIZE = 10; 
 
@@ -142,7 +142,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			LogEntry e = new LogEntry(cMessage);
 			logger.writeToBinary(e, true);
 			// Only one GS in the list at the time.
-			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(gsHostname, gsPort),this, timeout);
+			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(gsHostname, gsPort),this, TIMEOUT);
 			syncClientSocket.sendMessage();
 		}
 		else {
@@ -221,12 +221,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			ControlMessage controlMessage = new ControlMessage(identifier, ControlMessageType.AddJob, job, hostname, port);
 			controlMessage.setClock(tempClock);
-			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this, timeout);
+			SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(controlMessage, address, this, TIMEOUT);
 			syncClientSocket.sendMessageWithoutResponse();
 
 			// Schedule a timer to deal with the case where a AddJobAck message doesn't arrive in the specified timeout time.
 			Timer t = new Timer();
-			t.schedule(new ScheduledTask(this, controlMessage, address), timeout);
+			t.schedule(new ScheduledTask(this, controlMessage, address), TIMEOUT);
 			jobTimers.put(job.getId(), t);
 
 			delegatedJobsClock.put(job.getId(), tempClock);
@@ -335,7 +335,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		syncSocket.addMessageReceivedHandler(this);
 
 		ControlMessage message = new ControlMessage(identifier, ControlMessageType.RMRequestsGSList, hostname, port);
-		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(message, new InetSocketAddress(gridSchedulerHostname, gridSchedulerPort), this, timeout);
+		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(message, new InetSocketAddress(gridSchedulerHostname, gridSchedulerPort), this, TIMEOUT);
 		syncClientSocket.sendMessageInSameThread(message, true);
 
 	}
@@ -368,7 +368,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				gsList.put(address, 0);
 				ControlMessage msg = new ControlMessage(identifier, ControlMessageType.ResourceManagerJoin, this.hostname, port);
 				msg.setClock(vClock.getClock());
-				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this, TIMEOUT);
 				syncClientSocket.sendMessage();
 			}
 		}
@@ -386,7 +386,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 				if(!gsList.containsKey(address)) {
 					ControlMessage msg = new ControlMessage(identifier, ControlMessageType.ResourceManagerJoin, this.hostname, port);
 					msg.setClock(vClock.getClock());
-					syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
+					syncClientSocket = new SynchronizedClientSocket(msg, address, this, TIMEOUT);
 					syncClientSocket.sendMessage();
 				}
 				gsList.put(address, 0);
@@ -416,7 +416,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			msg.setClock(tempVC);
 
 			logger.writeToBinary(e,true);
-			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, timeout);
+			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, TIMEOUT);
 			syncClientSocket.sendMessage();
 
 			scheduleJobs();
@@ -521,7 +521,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			// Send log message to a randomly chosen GS.
 			InetSocketAddress newAddress = getRandomGS();
 			//System.out.println("[RM "+cluster.getID()+"] "+controlMessage.getType().name()+" FAILED! to [GS "+destinationAddress.getHostName()+":"+destinationAddress.getPort()+"]\n Sending to "+newAddress.getHostName()+":"+newAddress.getPort()+" now...");
-			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, newAddress ,this, timeout);
+			SynchronizedClientSocket s = new SynchronizedClientSocket(controlMessage, newAddress ,this, TIMEOUT);
 			s.sendMessage();
 		}
 		return null;
@@ -588,7 +588,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		msg = new ControlMessage(identifier, messageType, job, this.hostname, this.port);
 		tempClock = vClock.incrementClock(this.identifier);
 		msg.setClock(tempClock);
-		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, timeout);
+		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, TIMEOUT);
 		syncClientSocket.sendMessage();
 		return tempClock;
 	}

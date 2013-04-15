@@ -51,7 +51,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private  int port;
 
 	// timeout to recieve an ACK (response) message
-	private final int timeout = 1000;
+	private static final int TIMEOUT = 3000;
 
 	private ConcurrentHashMap<InetSocketAddress, Integer> gridSchedulersList;
 
@@ -132,7 +132,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			LogEntry e = new LogEntry(cMessage);
 			logger.writeToBinary(e, true);
 			// Only one GS in the list at the time.
-			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this, timeout);
+			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this, TIMEOUT);
 			syncClientSocket.sendMessage();
 		} else {
 			File file = new File (logfilename);
@@ -143,7 +143,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		ControlMessage cMessage =  new ControlMessage(identifier, ControlMessageType.GSRequestsGSList, hostname, port);
 
 		//send the message querying the other GS
-		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this, timeout);
+		syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(otherGSHostname, otherGSPort),this, TIMEOUT);
 		syncClientSocket.sendMessage();
 
 		running = true;
@@ -173,14 +173,14 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				// Send message to all RM's
 				for(InetSocketAddress address : resourceManagerLoad.keySet()) {
 					message = new ControlMessage(identifier, ControlMessageType.SimulationOver,hostname, port);
-					syncClientSocket = new SynchronizedClientSocket(message, address, handler, timeout);
+					syncClientSocket = new SynchronizedClientSocket(message, address, handler, TIMEOUT);
 					syncClientSocket.sendMessageWithoutResponse();
 				}
 
 				// Send to all GS's
 				for(InetSocketAddress address : gridSchedulersList.keySet()) {
 					message = new ControlMessage(identifier, ControlMessageType.SimulationOver,hostname, port);
-					syncClientSocket = new SynchronizedClientSocket(message, address, handler, timeout);
+					syncClientSocket = new SynchronizedClientSocket(message, address, handler, TIMEOUT);
 					syncClientSocket.sendMessageWithoutResponse();
 				}
 
@@ -334,7 +334,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			for(InetSocketAddress address : gridSchedulersList.keySet()) {
 				if (address.getPort() == this.getPort() && address.getHostName() == this.getHostname()) continue;
 				if (address.equals(controlMessage.getInetAddress())) continue;
-				syncClientSocket = new SynchronizedClientSocket(msg, address, this, timeout);
+				syncClientSocket = new SynchronizedClientSocket(msg, address, this, TIMEOUT);
 				syncClientSocket.sendMessageWithoutResponse();
 			}			
 			return msg;
@@ -400,7 +400,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			msgOpt = new ControlMessage(identifier, ControlMessageType.AddJobAck, controlMessage.getJob(), hostname, port);
 			msgOpt.setClock(tempVC);
 
-			syncClientSocket = new SynchronizedClientSocket(msgOpt, controlMessage.getJob().getOriginalRM(), this, timeout);
+			syncClientSocket = new SynchronizedClientSocket(msgOpt, controlMessage.getJob().getOriginalRM(), this, TIMEOUT);
 			syncClientSocket.sendMessageWithoutResponse();			
 
 			//TODO Enviar esta mensagem antes de enviar o AddJobAck??
@@ -516,7 +516,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				controlMessage.getType() == ControlMessageType.GSLogJobStarted){
 
 			if(checkGSFailures(destinationAddress)) {
-				SynchronizedClientSocket client = new SynchronizedClientSocket(controlMessage, destinationAddress, this, timeout);
+				SynchronizedClientSocket client = new SynchronizedClientSocket(controlMessage, destinationAddress, this, TIMEOUT);
 				client.sendMessage();
 			}
 		}
@@ -657,7 +657,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				cMessage.setGridSchedulersList(gridSchedulersList.keySet());
 
 				//syncSocket.sendMessage(cMessage, inetAdd);
-				syncClientSocket = new SynchronizedClientSocket(cMessage, inetAdd, this, timeout);
+				syncClientSocket = new SynchronizedClientSocket(cMessage, inetAdd, this, TIMEOUT);
 				syncClientSocket.sendMessage();
 			}
 
@@ -676,7 +676,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 					jobQueue.remove(job);
 
-					syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this, timeout);
+					syncClientSocket = new SynchronizedClientSocket(cMessage, leastLoadedRM, this, TIMEOUT);
 					syncClientSocket.sendMessageWithoutResponse();
 
 					// decrease the number of free nodes (because we just added a job)
@@ -755,7 +755,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		for(InetSocketAddress address : gridSchedulersList.keySet()) {
 			if (address.getHostName() == this.getHostname() && address.getPort() == this.getPort()) continue;
-			syncClientSocket = new SynchronizedClientSocket(messageToSend, address, this, timeout);
+			syncClientSocket = new SynchronizedClientSocket(messageToSend, address, this, TIMEOUT);
 			syncClientSocket.sendLogMessage(syncLog);
 		}
 
