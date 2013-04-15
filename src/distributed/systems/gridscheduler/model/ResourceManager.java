@@ -126,6 +126,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += hostname+":"+port+".log";
+		
+		if(!restart) {
+			File file = new File (logfilename);
+			file.delete();
+		}
+		
 		this.logger = new LogManager(logfilename);
 
 		if(restart) {
@@ -144,10 +150,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			// Only one GS in the list at the time.
 			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(gsHostname, gsPort),this, TIMEOUT);
 			syncClientSocket.sendMessage();
-		}
-		else {
-			File file = new File (logfilename);
-			file.delete();
 		}
 
 		gsList = new ConcurrentHashMap<InetSocketAddress, Integer>();
