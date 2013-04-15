@@ -47,7 +47,7 @@ public class LogManager {
 	}
 
 	public ArrayList<LogEntry> readFromBinaryFile (){
-		File file = new File (filename);
+		//File file = new File (filename);
 		ArrayList<LogEntry> recoveredLog = new ArrayList<LogEntry>();
 		if (file.exists ()){
 			ObjectInputStream ois = null;
