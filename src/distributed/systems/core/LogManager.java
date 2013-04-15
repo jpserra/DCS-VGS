@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -15,30 +16,33 @@ import java.util.ArrayList;
 public class LogManager {
 
 	private String filename;
+	private File file;
+	ObjectOutputStream out;
 
 	public LogManager(String filename){
 		this.filename= filename;
-
+		this.file = new File (filename);
+		try {
+			out = new AppendableObjectOutputStream (new FileOutputStream (filename, true));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public synchronized void writeToBinary (Object obj, boolean append){
-		File file = new File (filename);
-		ObjectOutputStream out = null;
-
 		try{
-			if (!file.exists () || !append) 
-				out = new ObjectOutputStream (new FileOutputStream (filename));
-			else out = new AppendableObjectOutputStream (new FileOutputStream (filename, append));
 			out.writeObject(obj);
 			out.flush ();
 		}catch (Exception e){
 			e.printStackTrace ();
-		}finally{
-			try{
-				if (out != null) out.close ();
-			}catch (Exception e){
-				e.printStackTrace ();
-			}
+		}
+	}
+
+	public void closeFile() {
+		try{
+			if (out != null) out.close();
+		}catch (Exception e){
+			e.printStackTrace ();
 		}
 	}
 
@@ -119,7 +123,7 @@ public class LogManager {
 			reset();
 		}
 	}
-	
+
 	public void writeToTextfile() {
 		ArrayList<LogEntry> unorderedLog = readFromBinaryFile();
 		try {
@@ -143,7 +147,7 @@ public class LogManager {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	public void writeOrderedToTextfile() {
@@ -171,7 +175,7 @@ public class LogManager {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public void writeOrderedRestartToTextfile() {
 		// TODO Auto-generated method stub
 		LogEntry[] log = readOrderedLog();
