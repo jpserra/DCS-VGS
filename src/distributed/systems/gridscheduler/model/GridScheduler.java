@@ -192,7 +192,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 
 				System.out.println("Writting log file in text format...");
-				logger.closeFile();
 				logger.writeOrderedToTextfile();
 				System.out.println("Shutting down now!...");
 
