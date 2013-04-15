@@ -16,7 +16,16 @@ public class Job implements Serializable{
 	private long duration;
 	private JobStatus status;
 	private InetSocketAddress originalRM;
+	private InetSocketAddress responsibleRM;
 	
+	public InetSocketAddress getResponsibleRM() {
+		return responsibleRM;
+	}
+
+	public void setResponsibleRM(InetSocketAddress responsibleRM) {
+		this.responsibleRM = responsibleRM;
+	}
+
 	/**
 	 * Constructs a new Job object with a certain duration and id. The id has to be unique
 	 * within the distributed system to avoid collisions.

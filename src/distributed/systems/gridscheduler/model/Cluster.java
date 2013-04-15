@@ -15,6 +15,7 @@ import java.util.List;
  */
 public class Cluster implements Runnable {
 
+	// To create unique ID's for the jobs.
 	public static final int JOBID_MULTIPLICATION_FACTOR = 100000; 
 	
 	private List <Node> nodes;
