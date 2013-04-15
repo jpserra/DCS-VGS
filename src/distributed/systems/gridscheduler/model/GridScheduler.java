@@ -63,9 +63,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private Thread showInfoThread;
 
 	// polling frequency of the thread that checks if the simulation is over
-	private long checkThreadPollSleep = 1000;
+	private final long checkThreadPollSleep = 1000;
+	private final long infoThreadPollSleep = 2000;
 
-	// polling frequency, 1hz
+	// polling frequency (schedule jobs)
 	private long pollSleep = 100;
 
 	private GridScheduler handler;
@@ -245,7 +246,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					}
 					System.out.println(print+"\n Jobs finished: "+jobsFinished+"\n"+gridSchedulersList);
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(infoThreadPollSleep);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -649,13 +650,13 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		while (running) {
 			// send a message to each resource manager, requesting its load
+			long initialTime = System.currentTimeMillis();
 			for (InetSocketAddress inetAdd : resourceManagerLoad.keySet())
 			{
 				ControlMessage cMessage = new ControlMessage(identifier, ControlMessageType.RequestLoad);
 				cMessage.setHostname(this.getHostname());
 				cMessage.setPort(this.getPort());
 				cMessage.setGridSchedulersList(gridSchedulersList.keySet());
-
 				//syncSocket.sendMessage(cMessage, inetAdd);
 				syncClientSocket = new SynchronizedClientSocket(cMessage, inetAdd, this, TIMEOUT);
 				syncClientSocket.sendMessage();
@@ -684,6 +685,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					resourceManagerLoad.put(leastLoadedRM, freeNodes-1);
 
 				}
+				long finalTime = System.currentTimeMillis() - initialTime;
+				System.out.println("POOL THREAD EXECUTION TIME (ms): "+finalTime);
 
 			}
 

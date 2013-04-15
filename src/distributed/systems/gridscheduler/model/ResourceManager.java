@@ -263,7 +263,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	/**
 	 * Tries to schedule jobs in the jobqueue to free nodes. 
 	 */
-	public void scheduleJobs() {
+	public synchronized void scheduleJobs() {
 		Node freeNode;
 		Job waitingJob;
 		int[] tempClock;
@@ -272,9 +272,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			freeNode.startJob(waitingJob);
 			tempClock = sendJobEvent(waitingJob,ControlMessageType.JobStarted);
 			LogEntry e = new LogEntry(waitingJob, LogEntryType.JOB_STARTED, tempClock);
-
 			logger.writeToBinary(e,true);
-
 		}
 	}
 
@@ -357,10 +355,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		if (controlMessage.getClock() != null) vClock.updateClock(controlMessage.getClock());
 
-		if(controlMessage.getType() != ControlMessageType.RequestLoad) {
-			//System.out.println("[RM "+cluster.getID()+"] Message received: " + controlMessage.getType()+"\n");
-		}
-
 		// When Resource manager receives the list of all GS available from the GS that was given when this RM was initialized. The RM will try to join each of the GS
 		if (controlMessage.getType() == ControlMessageType.ReplyGSList)
 		{
@@ -419,7 +413,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, TIMEOUT);
 			syncClientSocket.sendMessage();
 
-			scheduleJobs();
+			//scheduleJobs();
 
 			return null;
 
