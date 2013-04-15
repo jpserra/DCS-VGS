@@ -26,7 +26,6 @@ public class SynchronizedSocket extends Thread {
 		public ConnectionHandler(Socket socket, IMessageReceivedHandler handler) {
 			s = socket;
 			this.handler =  handler;
-			
 		}
 		
 		public void run() {
@@ -53,6 +52,7 @@ public class SynchronizedSocket extends Thread {
 
 			} catch (IOException | ClassNotFoundException e) {
 				//TODO Pode falhar aqui?
+				System.out.println("############# EXCEPTION HERE!");
 				e.printStackTrace();
 			}	
 		}
