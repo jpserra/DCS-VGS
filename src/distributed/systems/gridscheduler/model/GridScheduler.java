@@ -685,10 +685,11 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					resourceManagerLoad.put(leastLoadedRM, freeNodes-1);
 
 				}
-				long finalTime = System.currentTimeMillis() - initialTime;
-				System.out.println("POOL THREAD EXECUTION TIME (ms): "+finalTime);
 
 			}
+			
+			long finalTime = System.currentTimeMillis() - initialTime;
+			System.out.println("POOL THREAD EXECUTION TIME (ms): "+finalTime);
 
 			// sleep
 			try
