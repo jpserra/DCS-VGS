@@ -44,6 +44,15 @@ public class SynchronizedSocket extends Thread {
 				if(replyMsg != null) {
 					out.writeObject(replyMsg);
 					out.flush();
+					while(s.isConnected()) {
+						try {
+							Thread.sleep(10);
+						}
+						catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
 				}
 				
 				out.close();
