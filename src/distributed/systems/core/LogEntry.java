@@ -91,30 +91,32 @@ public class LogEntry implements Serializable {
 
 	@Override
 	public String toString(){
-		String s = "[";
+		String s = "";
 
 		if(clock != null){
-			s += "VecClock: [ ";
-
-			for(int i = 0; i< clock.length; i++)
-				s+= clock[i] + ", ";
-
+			
+			// Clock
+			s += "[";
+			for(int i = 0; i< clock.length; i++) {
+				if(i==clock.length-1) {
+					s+= String.format("%4d",clock[i]);
+				} else {
+					s+= String.format("%4d,",clock[i]);
+				}
+			}
 			s+= "]";
-			if(origin != null)
-				s += "Origin: " + origin.getHostName()+ ":"+origin.getPort() + " | ";
-
-			//		if(id != null)
-			//			s += "ID: " + id + " | ";
-
+			
 			if(event != null)
-				s += "Event: " + event.name() + " | "; 
-
+				s += " " + event.name();
+			
 			if(job != null)
-				s += "Job: " + job.toString() + " | ";
+				s += " " + job.getId();
+			
+			if(origin != null)
+				s += " " + origin.getHostName()+ ":"+origin.getPort();
 
 		}
 
-		s+= " ]";
 		return s;
 
 	}
