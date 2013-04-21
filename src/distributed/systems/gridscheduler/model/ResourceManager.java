@@ -6,8 +6,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,9 +53,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private int identifier;
 	private VectorialClock vClock;
 	private LogManager logger;
+	private LogManager jobsLogger;
 
-	private HashMap<Long, Job> outsideJobsToExecute;
-	private HashMap<Long, Job> ownJobsToIgnore;
+	private HashSet<Long> outsideJobsToExecute;
+	private HashSet<Long> ownJobsToIgnore;
 
 	private String logfilename = "";
 
@@ -77,10 +80,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private long pollSleep = 100;
 	private boolean running;
 	private Thread pollingThread;
+	private String jobsfilename;
 
 	//Getter's
-	public HashMap<Long, Job> getOutsideJobsToExecute() {return outsideJobsToExecute;}
-	public HashMap<Long, Job> getOwnJobsToIgnore() {return ownJobsToIgnore;}
+	public HashSet<Long> getOutsideJobsToExecute() {return outsideJobsToExecute;}
+	public HashSet<Long> getOwnJobsToIgnore() {return ownJobsToIgnore;}
 	public ConcurrentHashMap<InetSocketAddress, Integer> getGsList() {return gsList;}
 
 	private class ScheduledTask extends TimerTask implements Runnable {
@@ -127,13 +131,17 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += hostname+":"+port+".log";
+		this.jobsfilename += hostname+":"+port+".jobs";
 		
 		if(!restart) {
 			File file = new File (logfilename);
 			file.delete();
+			file = new File (jobsfilename);
+			file.delete();
 		}
 		
 		this.logger = new LogManager(logfilename);
+		this.jobsLogger = new LogManager(jobsfilename);
 
 		if(restart) {
 			SynchronizedClientSocket syncClientSocket;
@@ -142,7 +150,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			// Add GS to GS list
 			//System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
 			logger.writeOrderedRestartToTextfile();
-			getLogInformation(orderedLog);
+			getLogInformation();
 			ControlMessage cMessage =  new ControlMessage(identifier, ControlMessageType.RestartRM, hostname, port);
 			vClock.incrementClock(identifier);
 			cMessage.setClock(vClock.getClock());
@@ -169,22 +177,22 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// 1. Query each entry to fill the structure
 		LogEntryType evt = null;
 		HashMap<Long, LogJobInfo> logInfo = new HashMap<Long, LogJobInfo>();
-		ownJobsToIgnore = new HashMap<Long, Job>();
-		outsideJobsToExecute = new HashMap<Long, Job>();
+		ownJobsToIgnore = new HashSet<Long>();
+		outsideJobsToExecute = new HashSet<Long>();
 		LogJobInfo aux;
 		for(LogEntryText e : orderedLog) {
 			evt = e.getEvent();
 			if(evt==LogEntryType.JOB_ARRIVAL_INT || evt==LogEntryType.JOB_ARRIVAL_EXT) {
 				if(e.getJobID()/JOBID_MULTIPLICATION_FACTOR==identifier) {
-					logInfo.put(e.getJobID(), new LogJobInfo(e.getJob(), true));
+					logInfo.put(e.getJobID(), new LogJobInfo(e.getJobID(), true));
 				} else {
-					logInfo.put(e.getJobID(), new LogJobInfo(e.getJob(), false));
+					logInfo.put(e.getJobID(), new LogJobInfo(e.getJobID(), false));
 				}
 			} else if (evt==LogEntryType.JOB_COMPLETED) {
 				aux = logInfo.get(e.getJobID());
 				if(aux != null) {
 					if(aux.isSource()) {
-						ownJobsToIgnore.put(aux.getJob().getId(), aux.getJob());
+						ownJobsToIgnore.add(aux.getID());
 					}
 				}
 				logInfo.remove(e.getJobID());
@@ -195,7 +203,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// 2. Let's define which ones are ours and which ones are from other entities
 		for(Entry<Long, LogJobInfo> info : logInfo.entrySet()) {
 			if (!info.getValue().isSource()) {
-				outsideJobsToExecute.put(info.getKey(),info.getValue().getJob());
+				outsideJobsToExecute.add(info.getKey());
 			}
 		}
 	}
@@ -591,35 +599,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		SynchronizedClientSocket syncClientSocket = new SynchronizedClientSocket(msg, getRandomGS(), this, TIMEOUT);
 		syncClientSocket.sendMessage();
 		return tempClock;
-	}
-
-	public LogEntry[] getFullLog(){
-
-		LogEntry[] log = logger.readOrderedLog();
-		try {
-
-			File file = new File(logfilename+"_readable");
-
-			// if file doesnt exists, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
-
-			FileWriter fw = new FileWriter(file.getAbsoluteFile());
-			BufferedWriter bw = new BufferedWriter(fw);
-
-			for(LogEntry m : log) {
-				bw.write(m.toString() + "\n");
-			}
-
-			bw.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		return log;
-
 	}
 
 }

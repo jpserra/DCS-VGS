@@ -3,6 +3,7 @@ package distributed.systems.gridscheduler.model;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -84,17 +85,17 @@ public class Cluster implements Runnable {
 		
 		if(restart) {
 			// Get the Jobs that need to be executed from the analysis of the Log
-			final HashMap<Long, Job> outsideJobsToExecute = resourceManager.getOutsideJobsToExecute();
-			final HashMap<Long, Job> ownJobsToIgnore = resourceManager.getOwnJobsToIgnore();
-			System.out.println("Internal Jobs to be ignored (already compeleted)\n"+ownJobsToIgnore.keySet());
-			System.out.println("External Jobs to be generated:\n"+outsideJobsToExecute.keySet());
+			final HashSet<Long> outsideJobsToExecute = resourceManager.getOutsideJobsToExecute();
+			final HashSet<Long> ownJobsToIgnore = resourceManager.getOwnJobsToIgnore();
+			System.out.println("Internal Jobs to be ignored (already compeleted)\n"+ownJobsToIgnore);
+			System.out.println("External Jobs to be generated:\n"+outsideJobsToExecute);
 			// Create the thread that will add the local Jobs that were not completed
 			Thread createOwnJobs = new Thread(new Runnable() {
 				public void run() {
 					int jobId = id*JOBID_MULTIPLICATION_FACTOR;
 					for(int i = 0; i < nJobsToExecute; i++) {
 						jobId++;
-						if(ownJobsToIgnore.containsKey(new Long(jobId))) {
+						if(ownJobsToIgnore.contains(new Long(jobId))) {
 							continue;
 						}
 						Job job = new Job(8000 + (int)(Math.random() * 5000), jobId);
@@ -113,7 +114,8 @@ public class Cluster implements Runnable {
 			// Create the thread that will add the outside jobs that were not completed
 			Thread createOutsideJobs = new Thread(new Runnable() {
 				public void run() {
-					for(Job job : outsideJobsToExecute.values()) {
+					for(Long id : outsideJobsToExecute) {
+						Job job = new Job(8000 + (int)(Math.random() * 5000), id);
 						job.setOriginalRM(new InetSocketAddress(rmHostname,rmPort));
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
