@@ -30,6 +30,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	private String logfilename = "";
 	private LogManager logger;
+	
+	private boolean finished = false;
 
 	// job queue
 	private ConcurrentLinkedQueue<Job> jobQueue;
@@ -165,7 +167,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						e.printStackTrace();
 					}
 				}
-				boolean finished = true;
+				finished = true;
 				pollingThread.interrupt();
 				showInfoThread.interrupt();
 
@@ -500,19 +502,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
 			synchronized (this) {
-				if(restart) {
-					System.out.println("Shutting down in 2 seconds...");
-					try {
-						Thread.sleep(2000);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					System.out.println("Writting log file in text format...");
-					logger.writeOrderedToTextfile();
-					System.out.println("Shutting down now!...");
-					System.exit(0);
-				} else {
+				if(!finished) {
 					System.out.println("Shutting down in 2 seconds...");
 					try {
 						Thread.sleep(2000);
