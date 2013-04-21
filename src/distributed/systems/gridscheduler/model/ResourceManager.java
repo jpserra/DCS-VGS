@@ -131,17 +131,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += hostname+":"+port+".log";
-		this.jobsfilename += hostname+":"+port+".jobs";
 		
 		if(!restart) {
 			File file = new File (logfilename);
 			file.delete();
-			file = new File (jobsfilename);
-			file.delete();
 		}
 		
 		this.logger = new LogManager(logfilename);
-		this.jobsLogger = new LogManager(jobsfilename);
 
 		if(restart) {
 			SynchronizedClientSocket syncClientSocket;
