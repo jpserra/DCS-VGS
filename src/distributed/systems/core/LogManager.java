@@ -90,13 +90,8 @@ public class LogManager {
 			index++;
 		}
 		
-		//int clocks[][] = (int[][])clock.toArray();
-		
-		
 		ArrayList<String> string = new ArrayList<String>(unorderedLogMap.values());
 		String[] strings = (String[]) string.toArray();
-		
-	
 		
 		VectorialClock tmpClock = null;
 		boolean tradeMade, atLeastOne;
@@ -105,7 +100,6 @@ public class LogManager {
 		int clockLenght = clocksV[0].getClock().length;
 		String aux = null;
 		
-
 		do {
 			tradeMade = false;
 			for (int i = 0; i < clocksV.length - 1; i++) {
