@@ -118,8 +118,6 @@ public class SynchronizedClientSocket extends Thread {
 		// In case there is an exception thrown, a new message can be created.
 		// If that is the case, that message will be sent in the same thread.
 		if(message != null) sendMessageInSameThread(message, exceptionRequiresResponse);
-		
-		this.interrupt();
 
 	}
 
