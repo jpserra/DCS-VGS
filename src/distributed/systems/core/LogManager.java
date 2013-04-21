@@ -123,6 +123,7 @@ public class LogManager {
 		}
 	}
 	
+	
 	public void writeToTextfile() {
 		ArrayList<LogEntry> unorderedLog = readFromBinaryFile();
 		try {
