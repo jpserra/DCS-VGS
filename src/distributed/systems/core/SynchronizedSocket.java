@@ -54,9 +54,7 @@ public class SynchronizedSocket extends Thread {
 				//TODO Pode falhar aqui?
 				e.printStackTrace();
 			}
-			System.out.println("%%% Before");
-			this.interrupt();
-			System.out.println("### After");
+
 		}
 	}
 
@@ -71,7 +69,7 @@ public class SynchronizedSocket extends Thread {
 				System.out.println("#$%#$%#$%#$%#%#$%#%#$%# SERVER SOCKET EXCEPTION... in accept");
 				e.printStackTrace();
 			}
-		}		
+		}	
 	}
 
 	public void addMessageReceivedHandler(IMessageReceivedHandler handler) {
