@@ -73,7 +73,8 @@ public class VectorialClock implements Serializable {
 		assert(id>=0);
 		clock[id] = value;
 	}
-
+ 
+	@Override
 	public String toString(){
 		String s = "[ ";
 		for( int i= 0; i< this.clock.length; i++){
@@ -82,5 +83,7 @@ public class VectorialClock implements Serializable {
 		}
 		s+= "]";
 		return s;}
+	
+	
 
 }
