@@ -155,7 +155,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			vClock.incrementClock(identifier);
 			cMessage.setClock(vClock.getClock());
 			LogEntry e = new LogEntry(cMessage);
-			logger.writeToBinary(e, true);
+			logger.writeAsText(e, true);
 			// Only one GS in the list at the time.
 			syncClientSocket = new SynchronizedClientSocket(cMessage, new InetSocketAddress(gsHostname, gsPort),this, TIMEOUT);
 			syncClientSocket.sendMessage();
@@ -254,7 +254,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			//if(job.getOriginalRM().equals(new InetSocketAddress(hostname, port))) {
 				e = new LogEntry(job, LogEntryType.JOB_ARRIVAL_INT, tempClock);
 			//}
-			logger.writeToBinary(e,true);
+			logger.writeAsText(e,true);
 			scheduleJobs();
 		}
 
@@ -285,7 +285,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			freeNode.startJob(waitingJob);
 			tempClock = sendJobEvent(waitingJob,ControlMessageType.JobStarted);
 			LogEntry e = new LogEntry(waitingJob, LogEntryType.JOB_STARTED, tempClock);
-			logger.writeToBinary(e,true);
+			logger.writeAsText(e,true);
 		}
 	}
 
@@ -303,7 +303,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// write in the log that the job was executed
 		LogEntry e = new LogEntry(job, LogEntryType.JOB_COMPLETED, tempClock);
 
-		logger.writeToBinary(e,true);
+		logger.writeAsText(e,true);
 		// job finished, remove it from our pool
 		jobQueue.remove(job);
 	}
@@ -422,7 +422,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			msg = new ControlMessage(identifier, ControlMessageType.JobArrival, controlMessage.getJob(), this.hostname, this.port);
 			msg.setClock(tempVC);
 
-			logger.writeToBinary(e,true);
+			logger.writeAsText(e,true);
 			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, TIMEOUT);
 			syncClientSocket.sendMessage();
 
@@ -445,7 +445,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED,delegatedJobsClock.remove(controlMessage.getJob().getId()));
 
 			if(e.getClock()!=null)
-				logger.writeToBinary(e,true);
+				logger.writeAsText(e,true);
 
 			return null;
 		}
@@ -512,7 +512,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		// if jobAdd fails it will try to add it to the queue again
 		if (controlMessage.getType() == ControlMessageType.AddJob) {
 			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED_FAIL,delegatedJobsClock.remove(controlMessage.getJob().getId()));
-			logger.writeToBinary(e,true);
+			logger.writeAsText(e,true);
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if (t != null) {
 				//System.out.println("AddJob FAILED --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
