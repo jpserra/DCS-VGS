@@ -19,6 +19,10 @@ public class LogManager {
 	public LogManager(String filename){
 		this.filename= filename;
 	}
+	
+	public String getFilename() {
+		return filename;
+	}
 
 	public synchronized void writeToBinary (Object obj, boolean append){
 		File file = new File (filename);

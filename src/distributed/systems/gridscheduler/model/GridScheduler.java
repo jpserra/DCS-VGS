@@ -150,6 +150,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	}
 
+	private synchronized void simulationOver() {
+		
+	}
+	
 	private void launchCheckThread() {
 		// Thread that checks if the simulation is over.
 		new Thread(new Runnable() {
@@ -161,6 +165,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						e.printStackTrace();
 					}
 				}
+				boolean finished = true;
 				pollingThread.interrupt();
 				showInfoThread.interrupt();
 
@@ -193,6 +198,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 				System.out.println("Writting log file in text format...");
 				logger.writeOrderedToTextfile();
+				File f = new File(logger.getFilename());
+				f.delete();
 				System.out.println("Shutting down now!...");
 
 				System.exit(0);
@@ -505,6 +512,20 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 					logger.writeOrderedToTextfile();
 					System.out.println("Shutting down now!...");
 					System.exit(0);
+				} else {
+					System.out.println("Shutting down in 2 seconds...");
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("Writting log file in text format...");
+					logger.writeOrderedToTextfile();
+					File f = new File(logger.getFilename());
+					f.delete();
+					System.out.println("Shutting down now!...");
+					System.exit(0);					
 				}
 			}
 		}
