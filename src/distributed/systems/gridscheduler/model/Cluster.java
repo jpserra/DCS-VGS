@@ -141,7 +141,7 @@ public class Cluster implements Runnable {
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(125L);
+							Thread.sleep(50L);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
