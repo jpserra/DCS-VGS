@@ -17,6 +17,10 @@ public class VectorialClock implements Serializable {
 			clock[i] = 0;
 		}
 	}
+	
+	public VectorialClock(int[] clock) {
+		this.clock = clock;
+	}
 
 	/**
 	 * Returns the clock.
