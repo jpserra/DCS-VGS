@@ -106,6 +106,7 @@ public class SynchronizedClientSocket extends Thread {
 					e.printStackTrace();
 				}
 			}
+			System.out.println("CLIENT SOCKET WILL NOW CLOSE!");
 		}
 
 		try {

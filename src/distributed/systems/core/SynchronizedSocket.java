@@ -53,7 +53,8 @@ public class SynchronizedSocket extends Thread {
 			} catch (IOException | ClassNotFoundException e) {
 				//TODO Pode falhar aqui?
 				e.printStackTrace();
-			}	
+			}
+			this.interrupt();
 		}
 	}
 
