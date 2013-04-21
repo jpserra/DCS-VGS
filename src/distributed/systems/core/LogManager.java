@@ -264,13 +264,35 @@ public class LogManager {
 		int port;
 		LogEntryType event; 
 		int[] clock;
-		long jobID;
+		long jobID = -1;
+	
 		HashMap<int[], String> orderedLog = readOrderedLog();
 		LogEntryText[] entries = new LogEntryText[orderedLog.size()];
 		int i = 0;
 		for(String s : orderedLog.values()) {
 			//Parse string, put values in variables
+			String[] s1 = s.split("]");// 0 tem o clock 1 tem o resto
+			String[] s2 = s1[1].split(" "); //Event <JobID> Origin
+			event = LogEntryType.valueOf(s2[0]);
+			if (s2.length == 3){
+				jobID = Integer.parseInt(s2[1]);
+				String[] s3 = s2[2].split(":");
+				hostname= s3[0];
+				port = Integer.parseInt(s3[1]);
+			}
+			else {
+				String[] s3 = s2[1].split(":");
+				hostname= s3[0];
+				port = Integer.parseInt(s3[1]);
+			}
 			
+			s1[0].replace("[","");
+			String[] s4 = s1[0].split(",");
+			clock = new int[s4.length];
+			for(int j = 0; i< s4.length; i++){
+				clock[j] = Integer.parseInt(s4[j].trim());
+			}
+
 			//Create instance
 			entries[i] = new LogEntryText(hostname, port, event, clock, jobID);
 			i++;
