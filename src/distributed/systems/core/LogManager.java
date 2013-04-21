@@ -82,7 +82,11 @@ public class LogManager {
 		HashMap<int[], String> unorderedLogMap= ReadFromText();
 		
 		Set<int[]> clock = unorderedLogMap.keySet();
+		VectorialClock[] clocksV = new clo
 		int clocks[][] = (int[][])clock.toArray();
+		
+		
+		ArrayList<int[]> test = 
 		ArrayList<String> string = new ArrayList<String>(unorderedLogMap.values());
 		String[] strings = (String[]) string.toArray();
 		
@@ -186,8 +190,8 @@ public class LogManager {
 				while ((line = br.readLine()) != null) {
 				   // process the line.
 					String[] s1 = line.split("]");
-					s1[0].replace("[","");
-					String[] s2 = s1[0].split(",");
+					String s3 = s1[0].substring(1);
+					String[] s2 = s3.split(",");
 					clock = new int[s2.length];
 					for(int i = 0; i< s2.length; i++){
 						clock[i] = Integer.parseInt(s2[i].trim());
