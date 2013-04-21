@@ -21,7 +21,7 @@ public class LogManager {
 	}
 
 	public synchronized void writeToBinary (Object obj, boolean append){
-		/*File file = new File (filename);
+		File file = new File (filename);
 		ObjectOutputStream out = null;
 
 		try{
@@ -38,7 +38,7 @@ public class LogManager {
 			}catch (Exception e){
 				e.printStackTrace ();
 			}
-		}*/
+		}
 	}
 
 	public ArrayList<LogEntry> readFromBinaryFile (){
