@@ -1,16 +1,20 @@
 package distributed.systems.core;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Set;
 
 public class LogManager {
 
@@ -73,33 +77,40 @@ public class LogManager {
 	}
 
 	//Gets the Log ordered by clocks
-	public LogEntry[] readOrderedLog (){
+	public HashMap<int[], String> readOrderedLog (){
 
-		ArrayList<LogEntry> unorderedLog = readFromBinaryFile();	
-		LogEntry[] orderedLog = new LogEntry[unorderedLog.size()];
-		LogEntry tmpLog = null;
+		HashMap<int[], String> unorderedLogMap= ReadFromText();
+		
+		Set<int[]> clock = unorderedLogMap.keySet();
+		int clocks[][] = (int[][])clock.toArray();
+		ArrayList<String> string = new ArrayList<String>(unorderedLogMap.values());
+		String[] strings = (String[]) string.toArray();
+		
+	
+		
+		int[] tmpClock = null;
 		boolean tradeMade, atLeastOne;
-		if(unorderedLog.size() == 0)
+		if(clocks.length == 0)
 			return null;
-		int clockLenght = (unorderedLog.get(0)).getClock().length;
-
-		//copy
-		for (int i = 0; i < unorderedLog.size(); i++) {
-			orderedLog[i] = (LogEntry)unorderedLog.get(i);
-		}
+		int clockLenght = clocks[0].length;
+		String aux = null;
+		
 
 		do {
 			tradeMade = false;
-			for (int i = 0; i < orderedLog.length - 1; i++) {
+			for (int i = 0; i < clocks.length - 1; i++) {
 				atLeastOne = false;
 				for (int j = 0; j < clockLenght; j++) {
-					if (orderedLog[i].getClock()[j] >= orderedLog[i + 1].getClock()[j]) {
-						if(orderedLog[i].getClock()[j] > orderedLog[i + 1].getClock()[j])
+					if (clocks[i][j] >= clocks[i + 1][j]) {
+						if(clocks[i][j] > clocks[i + 1][j])
 							atLeastOne = true;
 						if (j == clockLenght-1 && atLeastOne) {
-							tmpLog = orderedLog[i];
-							orderedLog[i] = orderedLog[i + 1];
-							orderedLog[i + 1] = tmpLog;
+							tmpClock = clocks[i];
+							aux = strings[i];
+							clocks[i] = clocks[i + 1];
+							strings[i]= strings[i+1];
+							clocks[i + 1] = tmpClock;
+							strings[i+1] = aux;
 							tradeMade = true;
 						}
 					} else {
@@ -108,6 +119,11 @@ public class LogManager {
 				}
 			}
 		} while (tradeMade);
+		
+		HashMap<int[], String> orderedLog = new HashMap<int[], String>();
+		
+		for(int i = 0 ; i < clocks.length; i++)
+			orderedLog.put(clocks[i], strings[i]);
 
 		return orderedLog;
 	}
@@ -117,41 +133,81 @@ public class LogManager {
 			super(out);
 		}
 
+		
 		@Override
 		protected void writeStreamHeader() throws IOException {
 			reset();
 		}
 	}
 	
-	public void writeToTextfile() {
-		ArrayList<LogEntry> unorderedLog = readFromBinaryFile();
+//
+//
+	//
+	//
+	//
+	///NEW LOG WRITER AS TEXT FORMAT
+	//
+	//
+//
+	public synchronized void writeAsText (Object obj, boolean append){
 		try {
 
-			File file = new File(filename+"_txt_unordered");
+			File file = new File(filename+".txt");
 
-			// if file doesnt exists, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
-
-			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+			FileWriter fw = new FileWriter(file,true);
 			BufferedWriter bw = new BufferedWriter(fw);
-
-			for(LogEntry m : unorderedLog) {
-				bw.write(m.toString() + "\n");
-			}
-
-			bw.close();
+	
+				bw.write(obj.toString());
+				bw.newLine();
+        bw.close();
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 	}
+	
+	//
+	//
+		//
+		//
+		//
+		///NEW LOG READ AS TEXT FORMAT
+		//
+		//
+	//
+		public synchronized HashMap<int[], String> ReadFromText (){
+			int clock[];
+			HashMap<int[], String> log= new HashMap<int[], String>();
+			try {
 
-	public void writeOrderedToTextfile() {
+				File file = new File(filename+".txt");
+				BufferedReader br = new BufferedReader(new FileReader(file));
+				String line;
+				while ((line = br.readLine()) != null) {
+				   // process the line.
+					String[] s1 = line.split("]");
+					s1[0].replace("[","");
+					String[] s2 = s1[0].split(",");
+					clock = new int[s2.length];
+					for(int i = 0; i< s2.length; i++){
+						clock[i] = Integer.parseInt(s2[i].trim());
+					}
+					log.put(clock, line);
+					
+				}
+				br.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return log;
+		}
+		
+	
+	
+
+	public void writeLogToTextfile() {
 		// TODO Auto-generated method stub
-		LogEntry[] log = readOrderedLog();
+		HashMap<int[], String> log = readOrderedLog();
 		try {
 
 			File file = new File(filename+"_txt");
@@ -164,8 +220,9 @@ public class LogManager {
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
 
-			for(LogEntry m : log) {
-				bw.write(m.toString() + "\n");
+			for(String m : log.values()) {
+				bw.write(m);
+				bw.newLine();
 			}
 
 			bw.close();
@@ -177,7 +234,7 @@ public class LogManager {
 	
 	public void writeOrderedRestartToTextfile() {
 		// TODO Auto-generated method stub
-		LogEntry[] log = readOrderedLog();
+		HashMap<int[], String> log = readOrderedLog();
 		try {
 
 			File file = new File(filename+"_txt_beforeRestart");
@@ -190,8 +247,9 @@ public class LogManager {
 			FileWriter fw = new FileWriter(file.getAbsoluteFile());
 			BufferedWriter bw = new BufferedWriter(fw);
 
-			for(LogEntry m : log) {
-				bw.write(m.toString() + "\n");
+			for(String m : log.values()) {
+				bw.write(m);
+				bw.newLine();
 			}
 
 			bw.close();

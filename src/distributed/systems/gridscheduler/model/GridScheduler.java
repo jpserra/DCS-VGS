@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -123,8 +124,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// in the case of a restart
 		if(restart) {
 			// Read file to see last value of the clock (GS)
-			LogEntry[] orderedLog = logger.readOrderedLog();
-			vClock.setIndexValue(id, orderedLog[orderedLog.length-1].getClock()[id]);
+			HashMap<int[], String> orderedLog = logger.readOrderedLog();
+			vClock.setIndexValue(id, ((int[][])orderedLog.keySet().toArray())[orderedLog.size()-1][id]);
 			// Add GS to GS list
 			gridSchedulersList.put(new InetSocketAddress(otherGSHostname,otherGSPort),0);
 			// Send message to the GS provided in order to log the restart event.
@@ -199,7 +200,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 
 				System.out.println("Writting log file in text format...");
-				logger.writeOrderedToTextfile();
+				logger.writeLogToTextfile();
 				File f = new File(logger.getFilename());
 				f.delete();
 				System.out.println("Shutting down now!...");
@@ -511,7 +512,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						e.printStackTrace();
 					}
 					System.out.println("Writting log file in text format...");
-					logger.writeOrderedToTextfile();
+					logger.writeLogToTextfile();
 					File f = new File(logger.getFilename());
 					f.delete();
 					System.out.println("Shutting down now!...");
@@ -732,32 +733,32 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	/**
 	 * Returns the entire history of messages saves on the Grid Scheduler Log
 	 */
-	public LogEntry[] getFullLog(){
-
-		LogEntry[] log = logger.readOrderedLog();
-		try {
-
-
-			File file = new File(logfilename+"_readable");
-
-			// if file doesnt exist, then create it
-			if (!file.exists()) {
-				file.createNewFile();
-			}
-
-			FileWriter fw = new FileWriter(file.getAbsoluteFile());
-			BufferedWriter bw = new BufferedWriter(fw);
-
-			for(LogEntry m : log)
-				bw.write(m.toString() + "\n");
-
-			bw.close();
-
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return log;
-	}
+//	public LogEntry[] getFullLog(){
+//
+//		LogEntry[] log = logger.readOrderedLog();
+//		try {
+//
+//
+//			File file = new File(logfilename+"_readable");
+//
+//			// if file doesnt exist, then create it
+//			if (!file.exists()) {
+//				file.createNewFile();
+//			}
+//
+//			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+//			BufferedWriter bw = new BufferedWriter(fw);
+//
+//			for(LogEntry m : log)
+//				bw.write(m.toString() + "\n");
+//
+//			bw.close();
+//
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//		return log;
+//	}
 
 	/**
 	 * A message is sent to all the GS in the list of Grid Schedulers in order to synchronize events.

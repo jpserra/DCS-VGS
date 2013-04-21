@@ -136,9 +136,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		if(restart) {
 			SynchronizedClientSocket syncClientSocket;
-			LogEntry[] orderedLog = logger.readOrderedLog();
-			//Set the clock to the value where it stopped.
-			vClock.setIndexValue(id, orderedLog[orderedLog.length-1].getClock()[id]);
+			HashMap<int[], String> orderedLog = logger.readOrderedLog();
+			vClock.setIndexValue(id, ((int[][])orderedLog.keySet().toArray())[orderedLog.size()-1][id]);
+			// Add GS to GS list
 			//System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
 			logger.writeOrderedRestartToTextfile();
 			getLogInformation(orderedLog);
@@ -162,7 +162,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	}
 
-	private void getLogInformation(LogEntry[] orderedLog) {
+	private void getLogInformation() {
+		// Criar array de LogEntryText
+		LogEntryText
 		// 1. Query each entry to fill the structure
 		LogEntryType evt = null;
 		HashMap<Long, LogJobInfo> logInfo = new HashMap<Long, LogJobInfo>();
@@ -449,7 +451,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			synchronized (this) {
 				System.out.println("Simulation is over:" + controlMessage.getUrl() + " " + controlMessage.getPort());
 				System.out.println("Shutting down...");
-				logger.writeOrderedToTextfile();
+				logger.writeLogToTextfile();
 				File f = new File(logger.getFilename());
 				f.delete();
 				System.exit(0);
