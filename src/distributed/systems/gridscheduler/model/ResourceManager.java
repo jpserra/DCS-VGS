@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import distributed.systems.core.IMessageReceivedHandler;
 import distributed.systems.core.LogEntry;
+import distributed.systems.core.LogEntryText;
 import distributed.systems.core.LogEntryType;
 import distributed.systems.core.LogManager;
 import distributed.systems.core.Message;
@@ -164,29 +165,29 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 	private void getLogInformation() {
 		// Criar array de LogEntryText
-		LogEntryText
+		LogEntryText[] orderedLog = logger.getLogEntriesOrdered();
 		// 1. Query each entry to fill the structure
 		LogEntryType evt = null;
 		HashMap<Long, LogJobInfo> logInfo = new HashMap<Long, LogJobInfo>();
 		ownJobsToIgnore = new HashMap<Long, Job>();
 		outsideJobsToExecute = new HashMap<Long, Job>();
 		LogJobInfo aux;
-		for(LogEntry e : orderedLog) {
+		for(LogEntryText e : orderedLog) {
 			evt = e.getEvent();
 			if(evt==LogEntryType.JOB_ARRIVAL_INT || evt==LogEntryType.JOB_ARRIVAL_EXT) {
-				if(e.getJob().getId()/JOBID_MULTIPLICATION_FACTOR==identifier) {
-					logInfo.put(e.getJob().getId(), new LogJobInfo(e.getJob(), true));
+				if(e.getJobID()/JOBID_MULTIPLICATION_FACTOR==identifier) {
+					logInfo.put(e.getJobID(), new LogJobInfo(e.getJob(), true));
 				} else {
-					logInfo.put(e.getJob().getId(), new LogJobInfo(e.getJob(), false));
+					logInfo.put(e.getJobID(), new LogJobInfo(e.getJob(), false));
 				}
 			} else if (evt==LogEntryType.JOB_COMPLETED) {
-				aux = logInfo.get(e.getJob().getId());
+				aux = logInfo.get(e.getJobID());
 				if(aux != null) {
 					if(aux.isSource()) {
 						ownJobsToIgnore.put(aux.getJob().getId(), aux.getJob());
 					}
 				}
-				logInfo.remove(e.getJob().getId());
+				logInfo.remove(e.getJobID());
 			}
 		}
 

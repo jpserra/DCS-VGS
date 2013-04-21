@@ -5,9 +5,9 @@ public class LogEntryText {
 	private int port;
 	private LogEntryType event; 
 	private int[] clock;
-	private int jobID;
+	private long jobID;
 
-	public LogEntryText(String hostname,int port,LogEntryType event,int[] clock,int jobID) {
+	public LogEntryText(String hostname,int port,LogEntryType event,int[] clock,long jobID) {
 		this.hostname = hostname;
 		this.port = port;
 		this.event = event;
@@ -47,7 +47,7 @@ public class LogEntryText {
 		this.clock = clock;
 	}
 
-	public int getJobID() {
+	public long getJobID() {
 		return jobID;
 	}
 

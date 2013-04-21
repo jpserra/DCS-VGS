@@ -258,4 +258,23 @@ public class LogManager {
 			e.printStackTrace();
 		}
 	}
+
+	public LogEntryText[] getLogEntriesOrdered() {
+		String hostname;
+		int port;
+		LogEntryType event; 
+		int[] clock;
+		long jobID;
+		HashMap<int[], String> orderedLog = readOrderedLog();
+		LogEntryText[] entries = new LogEntryText[orderedLog.size()];
+		int i = 0;
+		for(String s : orderedLog.values()) {
+			//Parse string, put values in variables
+			
+			//Create instance
+			entries[i] = new LogEntryText(hostname, port, event, clock, jobID);
+			i++;
+		}
+		return entries;
+	}
 }
