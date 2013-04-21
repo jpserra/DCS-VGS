@@ -54,7 +54,9 @@ public class SynchronizedSocket extends Thread {
 				//TODO Pode falhar aqui?
 				e.printStackTrace();
 			}
+			System.out.println("%%% Before");
 			this.interrupt();
+			System.out.println("### After");
 		}
 	}
 
