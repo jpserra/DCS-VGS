@@ -126,6 +126,7 @@ public class LogManager {
 		
 		HashMap<int[], String> orderedLog = new HashMap<int[], String>();
 		
+		//TODO No hash map
 		for(int i = 0 ; i < clocksV.length; i++)
 			orderedLog.put(clocksV[i].getClock(), strings[i]);
 
