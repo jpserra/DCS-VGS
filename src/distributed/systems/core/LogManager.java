@@ -96,8 +96,6 @@ public class LogManager {
 		String[] strings = Arrays.asList(unorderedLogMap.values().toArray()).toArray(new String[unorderedLogMap.values().toArray().length]);
 		
 		
-	
-		
 		VectorialClock tmpClock = null;
 		boolean tradeMade, atLeastOne;
 		if(clocksV.length == 0)
@@ -105,7 +103,6 @@ public class LogManager {
 		int clockLenght = clocksV[0].getClock().length;
 		String aux = null;
 		
-
 		do {
 			tradeMade = false;
 			for (int i = 0; i < clocksV.length - 1; i++) {
