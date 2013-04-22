@@ -13,6 +13,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -90,8 +91,10 @@ public class LogManager {
 			index++;
 		}
 		
-		ArrayList<String> string = new ArrayList<String>(unorderedLogMap.values());
-		String[] strings = (String[]) string.toArray();
+		//int clocks[][] = (int[][])clock.toArray();
+		
+		String[] strings = Arrays.asList(unorderedLogMap.values().toArray()).toArray(new String[unorderedLogMap.values().toArray().length]);
+		
 		
 		VectorialClock tmpClock = null;
 		boolean tradeMade, atLeastOne;
