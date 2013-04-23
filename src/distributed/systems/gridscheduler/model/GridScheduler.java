@@ -462,11 +462,11 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			msg = new ControlMessage(identifier, ControlMessageType.JobCompletedAck, hostname, port, tempVC);
 			logger.writeAsText(new LogEntry(controlMessage),true);
 			synchronizeWithAllGS(msgLog);
-
-			if(finishedJobs.add(controlMessage.getJob().getId())) {
-				jobsFinished++;
+			synchronized (this) {
+				if(finishedJobs.add(controlMessage.getJob().getId())) {
+					jobsFinished++;
+				}
 			}
-
 			return msg;
 		}
 
@@ -475,8 +475,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			tempVC = vClock.updateClock(controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.GSLogJobCompletedAck, controlMessage.getJob(), hostname, port, tempVC);
 			logger.writeAsText(new LogEntry(controlMessage),true);
-			if(finishedJobs.add(controlMessage.getJob().getId())) {
-				jobsFinished++;
+			synchronized (this) {
+				if(finishedJobs.add(controlMessage.getJob().getId())) {
+					jobsFinished++;
+				}
 			}
 			return msg;
 		}

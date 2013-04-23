@@ -18,6 +18,7 @@ public class Cluster implements Runnable {
 
 	// To create unique ID's for the jobs.
 	public static final int JOBID_MULTIPLICATION_FACTOR = 100000; 
+	public static final long JOB_CREATION_DELAY = 50L; 
 	
 	private List <Node> nodes;
 	private ResourceManager resourceManager;
@@ -103,7 +104,7 @@ public class Cluster implements Runnable {
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(50L);
+							Thread.sleep(JOB_CREATION_DELAY);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -120,7 +121,7 @@ public class Cluster implements Runnable {
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(50L);
+							Thread.sleep(JOB_CREATION_DELAY);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -143,7 +144,7 @@ public class Cluster implements Runnable {
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(100L);
+							Thread.sleep(JOB_CREATION_DELAY*2);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
