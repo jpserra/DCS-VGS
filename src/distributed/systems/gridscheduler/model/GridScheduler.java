@@ -264,8 +264,17 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 							print += "\n";
 						}
 					}
+					
+					int nbThreads =  Thread.getAllStackTraces().keySet().size();
+					int nbRunning = 0;
+					for (Thread t : Thread.getAllStackTraces().keySet()) {
+					    if (t.getState()==Thread.State.RUNNABLE) nbRunning++;
+					}
 					System.out.println(print+"\n Jobs finished: "+jobsFinished+"\n"+gridSchedulersList);
-					System.out.println(print+"\n Active Threads: "+Thread.activeCount());
+					System.out.println(print+"1. Active Threads: "+Thread.activeCount());
+					System.out.println(print+"2. Active Threads: "+nbRunning);
+					System.out.println(print+"3. Total Number of Threads: "+nbThreads);
+					
 					try {
 						Thread.sleep(infoThreadPollSleep);
 					} catch (InterruptedException e) {
