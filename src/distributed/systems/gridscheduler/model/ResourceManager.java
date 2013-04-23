@@ -141,12 +141,17 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 		if(restart) {
 			SynchronizedClientSocket syncClientSocket;
-			HashMap<int[], String> orderedLog = logger.readOrderedLog();
-			vClock.setIndexValue(id, ((int[][])orderedLog.keySet().toArray())[orderedLog.size()-1][id]);
-			// Add GS to GS list
-			//System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
-			logger.writeOrderedRestartToTextfile();
+			logger.readOrderedLog();
+			int[][] orderedClocks = logger.getOrderedClocks();
+			vClock.setIndexValue(id, (orderedClocks[orderedClocks.length-1][id]));
+			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
+			
+			logger.writeOrderedLogToTextfile("_restart");
 			getLogInformation();
+			// IMPORTANT! Free up the memory
+			logger.cleanupStructures();
+			// Usage of log information is over...
+			
 			ControlMessage cMessage =  new ControlMessage(identifier, ControlMessageType.RestartRM, hostname, port);
 			vClock.incrementClock(identifier);
 			cMessage.setClock(vClock.getClock());
@@ -456,7 +461,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			synchronized (this) {
 				System.out.println("Simulation is over:" + controlMessage.getUrl() + " " + controlMessage.getPort());
 				System.out.println("Shutting down...");
-				logger.writeLogToTextfile();
+				logger.readOrderedLog();
+				logger.writeOrderedLogToTextfile("_final");
+				logger.cleanupStructures();
 				File f = new File(logger.getFilename());
 				f.delete();
 				System.exit(0);

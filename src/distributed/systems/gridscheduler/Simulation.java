@@ -85,9 +85,9 @@ public class Simulation implements Runnable {
 		System.out.println("Simulation Finished, printing Log... GS2");
 
 	//	list = gs2.getFullLog();
-		for(LogEntry j: list){
-			System.out.println(j.toString());
-		}
+//		for(LogEntry j: list){
+//			System.out.println(j.toString());
+//		}
 
 		// Now perform the cleanup
 		LogEntry[] logs = null;
@@ -107,6 +107,7 @@ public class Simulation implements Runnable {
 
 		// Stop grid scheduler
 		gs1.stopPollThread();
+		gs2.stopPollThread();
 
 		gridSchedulerPanel.dispose();
 

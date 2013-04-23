@@ -31,7 +31,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	private String logfilename = "";
 	private LogManager logger;
-	
+
 	private boolean finished = false;
 
 	// job queue
@@ -124,8 +124,13 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		// in the case of a restart
 		if(restart) {
 			// Read file to see last value of the clock (GS)
-			HashMap<int[], String> orderedLog = logger.readOrderedLog();
-			vClock.setIndexValue(id, ((int[][])orderedLog.keySet().toArray())[orderedLog.size()-1][id]);
+			logger.readOrderedLog();
+			int[][] orderedClocks = logger.getOrderedClocks();
+			vClock.setIndexValue(id, (orderedClocks[orderedClocks.length-1][id]));
+			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
+			logger.writeOrderedLogToTextfile("_restart");
+			// IMPORTANT! Free up the memory
+			logger.cleanupStructures();
 			// Add GS to GS list
 			gridSchedulersList.put(new InetSocketAddress(otherGSHostname,otherGSPort),0);
 			// Send message to the GS provided in order to log the restart event.
@@ -153,10 +158,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 	}
 
-	private synchronized void simulationOver() {
-		
-	}
-	
 	private void launchCheckThread() {
 		// Thread that checks if the simulation is over.
 		new Thread(new Runnable() {
@@ -168,7 +169,10 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						e.printStackTrace();
 					}
 				}
+
+				// With this flag, this GS wont care about messages sent from others.
 				finished = true;
+				// Stop running threads.
 				pollingThread.interrupt();
 				showInfoThread.interrupt();
 
@@ -200,7 +204,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 				}
 
 				System.out.println("Writting log file in text format...");
-				logger.writeLogToTextfile();
+				logger.readOrderedLog();
+				logger.writeOrderedLogToTextfile("_final");
+				logger.cleanupStructures();
 				File f = new File(logger.getFilename());
 				f.delete();
 				System.out.println("Shutting down now!...");
@@ -512,7 +518,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 						e.printStackTrace();
 					}
 					System.out.println("Writting log file in text format...");
-					logger.writeLogToTextfile();
+					logger.readOrderedLog();
+					logger.writeOrderedLogToTextfile("_final");
+					logger.cleanupStructures();
 					File f = new File(logger.getFilename());
 					f.delete();
 					System.out.println("Shutting down now!...");
@@ -733,32 +741,32 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	/**
 	 * Returns the entire history of messages saves on the Grid Scheduler Log
 	 */
-//	public LogEntry[] getFullLog(){
-//
-//		LogEntry[] log = logger.readOrderedLog();
-//		try {
-//
-//
-//			File file = new File(logfilename+"_readable");
-//
-//			// if file doesnt exist, then create it
-//			if (!file.exists()) {
-//				file.createNewFile();
-//			}
-//
-//			FileWriter fw = new FileWriter(file.getAbsoluteFile());
-//			BufferedWriter bw = new BufferedWriter(fw);
-//
-//			for(LogEntry m : log)
-//				bw.write(m.toString() + "\n");
-//
-//			bw.close();
-//
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-//		return log;
-//	}
+	//	public LogEntry[] getFullLog(){
+	//
+	//		LogEntry[] log = logger.readOrderedLog();
+	//		try {
+	//
+	//
+	//			File file = new File(logfilename+"_readable");
+	//
+	//			// if file doesnt exist, then create it
+	//			if (!file.exists()) {
+	//				file.createNewFile();
+	//			}
+	//
+	//			FileWriter fw = new FileWriter(file.getAbsoluteFile());
+	//			BufferedWriter bw = new BufferedWriter(fw);
+	//
+	//			for(LogEntry m : log)
+	//				bw.write(m.toString() + "\n");
+	//
+	//			bw.close();
+	//
+	//		} catch (IOException e) {
+	//			e.printStackTrace();
+	//		}
+	//		return log;
+	//	}
 
 	/**
 	 * A message is sent to all the GS in the list of Grid Schedulers in order to synchronize events.
