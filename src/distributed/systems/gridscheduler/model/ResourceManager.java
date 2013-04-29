@@ -47,7 +47,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private Queue<Job> jobQueue;
 
 	public static final int JOBID_MULTIPLICATION_FACTOR = 100000; 
-	
+
 	private String hostname;
 	private int port;
 	private int identifier;
@@ -131,12 +131,12 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += hostname+":"+port+".log";
-		
+
 		if(!restart) {
 			File file = new File (logfilename);
 			file.delete();
 		}
-		
+
 		this.logger = new LogManager(logfilename);
 
 		if(restart) {
@@ -145,13 +145,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			int[][] orderedClocks = logger.getOrderedClocks();
 			vClock.setIndexValue(id, (orderedClocks[orderedClocks.length-1][id]));
 			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
-			
+
 			logger.writeOrderedLogToTextfile("_restart");
 			getLogInformation();
 			// IMPORTANT! Free up the memory
 			logger.cleanupStructures();
 			// Usage of log information is over...
-			
+
 			ControlMessage cMessage =  new ControlMessage(identifier, ControlMessageType.RestartRM, hostname, port);
 			vClock.incrementClock(identifier);
 			cMessage.setClock(vClock.getClock());
@@ -231,7 +231,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			int[] tempClock = null;
 			InetSocketAddress address = getRandomGS();
 
-			tempClock = vClock.incrementClock(identifier).clone();
+			tempClock = vClock.incrementClock(identifier);
 
 			ControlMessage controlMessage = new ControlMessage(identifier, ControlMessageType.AddJob, job, hostname, port);
 			controlMessage.setClock(tempClock);
@@ -242,7 +242,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			Timer t = new Timer();
 			t.schedule(new ScheduledTask(this, controlMessage, address), TIMEOUT);
 			jobTimers.put(job.getId(), t);
-
 			delegatedJobsClock.put(job.getId(), tempClock);
 
 			//System.out.println("JOB "+job.getId()+" sent to [GS "+address.getHostName()+":"+address.getPort()+"] @ "+System.currentTimeMillis());
@@ -253,7 +252,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			int[] tempClock = sendJobEvent(job, ControlMessageType.JobArrival);
 			LogEntry e = null;
 			//if(job.getOriginalRM().equals(new InetSocketAddress(hostname, port))) {
-				e = new LogEntry(job, LogEntryType.JOB_ARRIVAL_INT, tempClock);
+			e = new LogEntry(job, LogEntryType.JOB_ARRIVAL_INT, tempClock);
 			//}
 			logger.writeAsText(e,true);
 			scheduleJobs();
@@ -415,10 +414,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			jobQueue.add(controlMessage.getJob());
 			int[] tempVC = vClock.incrementClock(identifier);
 			vClock.updateClock(controlMessage.getClock());
-			
+
 			// The Job came from one GS, so it ir marked as an external one
 			e = new LogEntry(controlMessage.getJob(), LogEntryType.JOB_ARRIVAL_EXT, tempVC);
-			
+
 			e.setOrigin(controlMessage.getInetAddress());
 
 			//Now only sends message to the GS from where the message came from.
@@ -428,8 +427,6 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			logger.writeAsText(e,true);
 			syncClientSocket = new SynchronizedClientSocket(msg, controlMessage.getInetAddress(), this, TIMEOUT);
 			syncClientSocket.sendMessage();
-
-			//scheduleJobs();
 
 			return null;
 
@@ -447,8 +444,10 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED,delegatedJobsClock.remove(controlMessage.getJob().getId()));
 
-			if(e.getClock()!=null)
+			if(e.getClock()!=null) {
 				logger.writeAsText(e,true);
+				System.out.println("entry written");
+			}
 
 			return null;
 		}
