@@ -89,20 +89,6 @@ public class LogManager {
 
 		Set<int[]> clock = unorderedLogMap.keySet();
 
-		/* 
-		 * Option 1
-		VectorialClock[] clocksV = new VectorialClock[clock.size()];
-		int index = 0;
-		for(int[] c : clock) {
-			clocksV[index] = new VectorialClock(c);
-			index++;
-		}
-		 */
-
-		/*
-		 * Option 2
-		 */
-		//int clocks[][] = (int[][])clock.toArray();
 		int clocks[][] = new int[clock.size()][clock.iterator().next().length];
 		int index = 0;
 		for(int[] c : clock) {
@@ -147,12 +133,6 @@ public class LogManager {
 
 		orderedClocks = clocks;
 		orderedLogs = strings;
-
-		/*
-		HashMap<int[], String> orderedLog = new HashMap<int[], String>();
-		for(int i = 0 ; i < clocksV.length; i++)
-			//Guardar os clocks algures...
-		 */
 
 	}
 

@@ -414,9 +414,11 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			LogEntry e = null;
 			jobQueue.add(controlMessage.getJob());
 			int[] tempVC = vClock.incrementClock(identifier);
+			vClock.updateClock(controlMessage.getClock());
 			
 			// The Job came from one GS, so it ir marked as an external one
 			e = new LogEntry(controlMessage.getJob(), LogEntryType.JOB_ARRIVAL_EXT, tempVC);
+			
 			e.setOrigin(controlMessage.getInetAddress());
 
 			//Now only sends message to the GS from where the message came from.
