@@ -415,7 +415,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 			tempVC = vClock.updateClock(controlMessage.getClock());
 
-			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobArrival, controlMessage.getJob(), controlMessage.getInetAddress().getHostName(), controlMessage.getInetAddress().getPort(), controlMessage.getClock());
+			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobArrival, controlMessage.getJob(), hostname, port, controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.JobArrivalAck, hostname, port, tempVC);
 
 			logger.writeAsText(new LogEntry(controlMessage),true);
@@ -442,9 +442,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.JobStarted) {
 			rmList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
-			System.out.println("Hostname JS: "+controlMessage.getInetAddress().getHostName());
-			System.out.println("    Port JS: "+controlMessage.getInetAddress().getPort());
-			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobStarted, controlMessage.getJob(), controlMessage.getInetAddress().getHostName(), controlMessage.getInetAddress().getPort(), controlMessage.getClock());
+			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobStarted, controlMessage.getJob(), hostname, port, controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.JobStartedAck, hostname, port, tempVC);
 			logger.writeAsText(new LogEntry(controlMessage),true);
 			synchronizeWithAllGS(msgLog);
@@ -462,7 +460,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.JobCompleted) {
 			rmList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
-			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobCompleted, controlMessage.getJob(), controlMessage.getInetAddress().getHostName(), controlMessage.getInetAddress().getPort(), controlMessage.getClock());
+			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobCompleted, controlMessage.getJob(),  hostname, port, controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.JobCompletedAck, hostname, port, tempVC);
 			logger.writeAsText(new LogEntry(controlMessage),true);
 			synchronizeWithAllGS(msgLog);
