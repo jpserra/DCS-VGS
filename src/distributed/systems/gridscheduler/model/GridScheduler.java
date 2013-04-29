@@ -257,17 +257,17 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 							print += "\n";
 						}
 					}
-					
+
 					int nbThreads =  Thread.getAllStackTraces().keySet().size();
 					int nbRunning = 0;
 					for (Thread t : Thread.getAllStackTraces().keySet()) {
-					    if (t.getState()==Thread.State.RUNNABLE) nbRunning++;
+						if (t.getState()==Thread.State.RUNNABLE) nbRunning++;
 					}
 					System.out.println(print+"\n Jobs finished: "+jobsFinished+"\n"+gridSchedulersList);
 					System.out.println(print+"1. Active Threads: "+Thread.activeCount());
 					System.out.println(print+"2. Active Threads: "+nbRunning);
 					System.out.println(print+"3. Total Number of Threads: "+nbThreads);
-					
+
 					try {
 						Thread.sleep(infoThreadPollSleep);
 					} catch (InterruptedException e) {
@@ -442,6 +442,8 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		if (controlMessage.getType() == ControlMessageType.JobStarted) {
 			rmList.put(controlMessage.getInetAddress(), 0);
 			tempVC = vClock.updateClock(controlMessage.getClock());
+			System.out.println("Hostname JS: "+controlMessage.getInetAddress().getHostName());
+			System.out.println("    Port JS: "+controlMessage.getInetAddress().getPort());
 			msgLog = new ControlMessage(controlMessage.getId(), ControlMessageType.GSLogJobStarted, controlMessage.getJob(), controlMessage.getInetAddress().getHostName(), controlMessage.getInetAddress().getPort(), controlMessage.getClock());
 			msg = new ControlMessage(identifier, ControlMessageType.JobStartedAck, hostname, port, tempVC);
 			logger.writeAsText(new LogEntry(controlMessage),true);
@@ -512,8 +514,9 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		}
 
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
-			synchronized (this) {
-				if(!finished) {
+			if(!finished) {
+				synchronized (this) {
+					finished = true;
 					System.out.println("Shutting down in 2 seconds...");
 					try {
 						Thread.sleep(2000);
