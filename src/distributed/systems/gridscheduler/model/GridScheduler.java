@@ -119,6 +119,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			// Read file to see last value of the clock (GS)
 			logger.readOrderedLog();
 			int[][] orderedClocks = logger.getOrderedClocks();
+			System.out.println(orderedClocks);
 			vClock.setIndexValue(id, (orderedClocks[orderedClocks.length-1][id]));
 			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
 			logger.writeOrderedLogToTextfile("_restart");
