@@ -1,15 +1,11 @@
 package distributed.systems.gridscheduler.model;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Queue;
-import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -142,11 +138,13 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		if(restart) {
 			SynchronizedClientSocket syncClientSocket;
 			logger.readOrderedLog();
+			//Set the clock to continue
 			int[][] orderedClocks = logger.getOrderedClocks();
 			vClock.setIndexValue(id, (orderedClocks[orderedClocks.length-1][id]));
 			System.out.println("INITIAL CLOCK AFTER RESTART: "+vClock.toString());
-
+			// Save previous log
 			logger.writeOrderedLogToTextfile("_restart");
+			//
 			getLogInformation();
 			// IMPORTANT! Free up the memory
 			logger.cleanupStructures();
@@ -173,7 +171,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	}
 
 	private void getLogInformation() {
-		// Criar array de LogEntryText
+		// Get the log entries from the log
 		LogEntryText[] orderedLog = logger.getLogEntriesOrdered();
 		// 1. Query each entry to fill the structure
 		LogEntryType evt = null;
