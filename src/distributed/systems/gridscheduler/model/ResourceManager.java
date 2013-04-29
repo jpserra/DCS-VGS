@@ -437,17 +437,16 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if(t != null) {
-				//System.out.println("AddJobAck --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				System.out.println("AddJobAck --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
 				t.cancel();
 				t.purge();
 			}
 
 			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED,delegatedJobsClock.remove(controlMessage.getJob().getId()));
-
-			if(e.getClock()!=null) {
+			
+			//if(e.getClock()!=null) {
 				logger.writeAsText(e,true);
-				System.out.println("entry written");
-			}
+			//}
 
 			return null;
 		}
