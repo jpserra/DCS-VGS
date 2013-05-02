@@ -443,7 +443,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			Timer t = jobTimers.remove(controlMessage.getJob().getId());
 			if(t != null) {
-				System.out.println("AddJobAck --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
+				//System.out.println("AddJobAck --> Timer Cancelado! ID:"+controlMessage.getJob().getId());
 				t.cancel();
 				t.purge();
 			}
