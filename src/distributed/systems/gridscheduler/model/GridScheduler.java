@@ -635,7 +635,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	}
 
 	// finds the least loaded resource manager and returns its url
-	private InetSocketAddress getLeastLoadedRM(InetSocketAddress ignoreAddress) {
+	private InetSocketAddress getLeastLoadedRM() {
 		InetSocketAddress ret = null; 
 		int maxFreeNodes = Integer.MIN_VALUE;
 		Set<InetSocketAddress> rm = new HashSet<InetSocketAddress>();
@@ -643,8 +643,6 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 		synchronized (resourceManagerLoad) {
 			for (InetSocketAddress key : resourceManagerLoad.keySet())
 			{
-				//				if(key.equals(ignoreAddress))
-				//					continue;
 				if (resourceManagerLoad.get(key) > maxFreeNodes)
 				{
 					maxFreeNodes = resourceManagerLoad.get(key);
@@ -695,7 +693,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 			// schedule waiting messages to the different clusters
 			for (Job job : jobQueue)
 			{
-				InetSocketAddress leastLoadedRM =  getLeastLoadedRM(job.getOriginalRM());
+				InetSocketAddress leastLoadedRM =  getLeastLoadedRM();
 
 				if (leastLoadedRM!=null) {
 
