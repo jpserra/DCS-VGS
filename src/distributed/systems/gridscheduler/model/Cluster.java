@@ -25,7 +25,7 @@ public class Cluster implements Runnable {
 	private final int id;
 
 	// polling frequency, 10hz
-	private long pollSleep = 100;
+	private long pollSleep = 500;
 
 	// polling thread
 	private Thread pollingThread;
@@ -102,7 +102,7 @@ public class Cluster implements Runnable {
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(50L);
+							Thread.sleep(40L);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -118,7 +118,7 @@ public class Cluster implements Runnable {
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(50L);
+							Thread.sleep(40L);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -141,7 +141,7 @@ public class Cluster implements Runnable {
 						getResourceManager().addJob(job);
 						// Sleep a while before creating a new job
 						try {
-							Thread.sleep(100L);
+							Thread.sleep(20L);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
