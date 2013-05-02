@@ -450,9 +450,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 
 			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED,delegatedJobsClock.remove(controlMessage.getJob().getId()));
 
-			//if(e.getClock()!=null) {
-			logger.writeAsText(e,true);
-			//}
+			if(e.getClock()!=null) {
+				logger.writeAsText(e,true);
+			}
 
 			return null;
 		}
