@@ -31,7 +31,7 @@ public class Cluster implements Runnable {
 	// polling thread
 	private Thread pollingThread;
 	private boolean running;
-
+	
 	/**
 	 * Creates a new Cluster, with a number of nodes and a resource manager
 	 * <p>

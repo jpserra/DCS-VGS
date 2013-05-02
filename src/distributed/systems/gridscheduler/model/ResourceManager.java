@@ -77,6 +77,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	private boolean running;
 	private Thread pollingThread;
 	private String jobsfilename;
+	private int jobsDone;
+	
+	private boolean finished = false;
 
 	//Getter's
 	public HashSet<Long> getOutsideJobsToExecute() {return outsideJobsToExecute;}
@@ -127,6 +130,8 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		this.jobQueue = new ConcurrentLinkedQueue<Job>();
 		this.vClock = new VectorialClock(nEntities);
 		this.logfilename += hostname+":"+port+".log";
+
+		this.jobsDone = 0;
 
 		if(!restart) {
 			File file = new File (logfilename);
@@ -295,6 +300,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 	public void jobDone(Job job) {
 		// preconditions
 		assert(job != null) : "parameter 'job' cannot be null";
+		jobsDone++;
 		int[] tempClock;
 		// try to contact a GS in order to inform that a job was completed locally
 		tempClock = sendJobEvent(job,ControlMessageType.JobCompleted);
@@ -411,7 +417,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			LogEntry e = null;
 
 			jobQueue.add(controlMessage.getJob());
-			
+
 			int[] tempVC = vClock.incrementClock(identifier);
 			vClock.updateClock(controlMessage.getClock());
 
@@ -443,9 +449,9 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 			}
 
 			LogEntry e = new LogEntry(controlMessage.getJob(),LogEntryType.JOB_DELEGATED,delegatedJobsClock.remove(controlMessage.getJob().getId()));
-			
+
 			//if(e.getClock()!=null) {
-				logger.writeAsText(e,true);
+			logger.writeAsText(e,true);
 			//}
 
 			return null;
@@ -458,15 +464,26 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 		}
 
 		if (controlMessage.getType() == ControlMessageType.SimulationOver) {
-			synchronized (this) {
-				System.out.println("Simulation is over:" + controlMessage.getUrl() + " " + controlMessage.getPort());
-				System.out.println("Shutting down...");
-				logger.readOrderedLog();
-				logger.writeOrderedLogToTextfile("_final");
-				logger.cleanupStructures();
-				File f = new File(logger.getFilename());
-				f.delete();
-				System.exit(0);
+			if(!finished) {
+				synchronized (this) {
+					finished = true;
+					System.out.println("Simulation is over:" + controlMessage.getUrl() + " " + controlMessage.getPort());
+					System.out.println("Shutting down in 2 seconds...");
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("Writting log file in text format...");
+					logger.readOrderedLog();
+					logger.writeOrderedLogToTextfile("_final");
+					logger.cleanupStructures();
+					File f = new File(logger.getFilename());
+					f.delete();
+					System.out.println("Shutting down now!...");
+					System.exit(0);
+				}
 			}
 		}
 
