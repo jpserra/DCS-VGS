@@ -475,6 +475,7 @@ public class ResourceManager implements INodeEventHandler, IMessageReceivedHandl
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					System.out.println("Jobs ran in this cluster: "+jobsDone);
 					System.out.println("Writting log file in text format...");
 					logger.readOrderedLog();
 					logger.writeOrderedLogToTextfile("_final");
