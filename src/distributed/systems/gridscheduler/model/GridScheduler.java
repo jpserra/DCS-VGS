@@ -65,7 +65,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 	private final long infoThreadPollSleep = 2000;
 
 	// polling frequency (schedule jobs)
-	private long pollSleep = 100;
+	private long pollSleep = 500;
 
 	private GridScheduler handler;
 
@@ -710,7 +710,7 @@ public class GridScheduler implements IMessageReceivedHandler, Runnable {
 
 					// decrease the number of free nodes (because we just added a job)
 					freeNodes = resourceManagerLoad.get(leastLoadedRM);
-					resourceManagerLoad.put(leastLoadedRM, freeNodes-1);
+					resourceManagerLoad.put(leastLoadedRM, freeNodes-1*(gridSchedulersList.size()/2));
 
 				}
 
